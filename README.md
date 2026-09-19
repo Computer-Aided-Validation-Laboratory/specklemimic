@@ -20,12 +20,16 @@ The repository is structured to maintain a clear and accessible workflow for the
 ### Focus 1: Speckle Quality Metrics & Statistics
 **Priority Reading:**
 * Dong, Y. L., & Pan, B. (2017). *A Review of Speckle Pattern Fabrication and Assessment for Digital Image Correlation.* Experimental Mechanics, 57(8), 1161–1181. [[DOI](https://doi.org/10.1007/[...])]
+> *Note: This is being treated as a hub for literature, It has the original references for various metrics and fabrication techniques that I am looking into as I read this paper.*
 
 ### Focus 2: Procedural Reconstruction Techniques
 **Background Reading:**
 * Brunton, S. L. (2026). *Optimization: A Bootcamp for Machine Learning, Inverse Problems, and Control.* Cambridge University Press. [[DOI](https://doi.org/10.1017/9781009755856)]
 > *Note: Temporarily on the backburner until Focus 1 is thoroughly understood.*
 
+### Coding: Learning some C++
+**FCC Course on C++**
+* https://www.youtube.com/watch?v=8jLOx1hD3_o&t=0s
 ---
 
 ## Progress Statistics
