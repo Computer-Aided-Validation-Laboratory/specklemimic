@@ -1,29 +1,36 @@
-# Speckle Mimic - Literature Reviews
+# Speckle Mimic: Literature Reviews
 
-Just for formalities: project specification [here](./dev/projectspec_speckle_mimic.md)
+> **Reference:** [Project Specification](./dev/projectspec_speckle_mimic.md)
 
-## Structure of this branch
+This branch is a clean workspace dedicated to organizing and documenting our literature review assets.
 
-This is mostly a clean branch so that we can organize a bunch of things with regards to the literature review. There are a few salient features of this branch:
-1. A pdf file summarizing the lessons learnt from the literature review. This file acts as a latex book with different phases.
-2. A resources folder containing information about all the papers that have been read/have to be read. This information is contained as a .bib file and some markdown files.
-3. A markdown file (Summary.md) used to explain what I learnt from a specific paper and how important it is to this research.
+## Branch Structure
+
+The repository is structured to maintain a clear and accessible workflow for the research phase:
+
+* **PDF Summary:** A LaTeX book-style document that compiles and summarizes the lessons learned across different phases of the review.
+* **`resources/` Directory:** Contains all metadata for pending and completed readings. This includes a central `.bib` file and supplementary Markdown notes.
+* **`Summary.md`:** Detailed breakdowns explaining the key takeaways from specific papers and their direct relevance to this project.
+
+---
 
 ## Current Focus
 
-### Focus 1: Understanding different speckle quality metrics and speckle statistics
+### Focus 1: Speckle Quality Metrics & Statistics
+**Priority Reading:**
+* Dong, Y. L., & Pan, B. (2017). *A Review of Speckle Pattern Fabrication and Assessment for Digital Image Correlation.* Experimental Mechanics, 57(8), 1161–1181. [[DOI](https://doi.org/10.1007/[...])]
 
-Priority paper reading list:
-1. Dong, Y. L., and B. Pan. “A Review of Speckle Pattern Fabrication and Assessment for Digital Image Correlation.” Experimental Mechanics 57, no. 8 (2017): 1161–81. https://doi.org/10.1007/[...]
+### Focus 2: Procedural Reconstruction Techniques
+**Background Reading:**
+* Brunton, S. L. (2026). *Optimization: A Bootcamp for Machine Learning, Inverse Problems, and Control.* Cambridge University Press. [[DOI](https://doi.org/10.1017/9781009755856)]
+> *Note: Temporarily on the backburner until Focus 1 is thoroughly understood.*
 
-### Focus 2: Understanding Procedural Reconstruction Techniques
+---
 
-Currently reading a textbook on optimization theory (backburner until focus 1 is properly understood):
-Brunton, Steven L. Optimization: A Bootcamp for Machine Learning, Inverse Problems, and Control. Cambridge University Press, 2026. https://doi.org/10.1017/9781009755856.
+## Progress Statistics
 
-## Statistics
+Keeping a running tally of the review process:
 
-(I just think this would be cool to update)
-1. Papers Read: 2
-2. Pages Read: 33
-3. Hours of Lectures Watched: 0
+* **Papers Read:** 2
+* **Pages Read:** 33
+* **Lecture Hours:** 0
