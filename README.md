@@ -10,7 +10,7 @@ The repository is structured to maintain a clear and accessible workflow for the
 
 * **PDF Summary:** A LaTeX book-style document that compiles and summarizes the lessons learned across different phases of the review.
 * **`resources/` Directory:** Contains all metadata for pending and completed readings. This includes a central `.bib` file and supplementary Markdown notes.
-* **`Summary.md`:** Detailed breakdowns explaining the key takeaways from specific papers and their direct relevance to this project.
+* **`resources/Summary.md`:** Detailed breakdowns explaining the key takeaways from specific papers and their direct relevance to this project.
 * **`Ideas.md`:** This is self-explanatory.
 
 ---
