@@ -38,4 +38,4 @@ Keeping a running tally of the review process:
 
 * **Papers Read:** 2
 * **Pages Read:** 33
-* **Lecture Hours:** 0
+* **Lecture Hours:** 1.72
