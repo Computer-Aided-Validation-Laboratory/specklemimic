@@ -7,6 +7,9 @@
 > **LG:** I think that we will have to mess around quite a bit with crafting good cost functions, that will be a mini-project by itself I think.
 > That would make getting some sort of a good speckle generated/training dataset even more important.
 
+**2. Thinking about how to use local quality parameters, maybe we can have a fixed subset and step size for each speckle pattern and then run through them all comparing the local parameter. After that, we can formulate the average of this parameter and its standard deviation as a potential loss function.**
+> **LG:** These are just some ideas on how we can use local parameters too for reconstruction, we may not have to only use global parameters. It could also be some sort of a test to see if the ideal subset size we get by keeping a threshold SSSIG stays the same in our reconstructed speckle pattern.
+
 ---
 
 ## 🔭 Long Shots
