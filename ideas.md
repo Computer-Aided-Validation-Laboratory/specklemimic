@@ -19,3 +19,4 @@
 **1. Looking into preserving some sort of topological structure while doing the super-resolution.**
 
 > **LG:** There is some relevant stuff on something like this in topological data analysis I think, for such data-driven approaches.
+> **LG:** Maybe one topological invariant/structure that can be preserved is the mean speckle size as its such a rudimentary but important parameter to keep in mind.
