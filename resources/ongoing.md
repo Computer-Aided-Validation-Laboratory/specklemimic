@@ -6,7 +6,7 @@ This is organized by sub-category
 
 ## 🔬 Speckle Reconstruction
 
-**1. Su, Yong, Qingchuan Zhang, and Zeren Gao. “Statistical Model for Speckle Pattern Optimization.” Optics Express 25, no. 24 (2017): 30259–75. https://doi.org/10.1364/OE.25.030259.**
+**1. Reu, Phillip. “All about Speckles: Edge Sharpness.” Experimental Techniques 39, no. 2 (2015): 1–2. https://doi.org/10.1111/ext.12139.**
 
 > **LG:** This is mostly empty right now because I am just following the paper trail from these big papers on what I potentially find interesting 
 > (for example looking further into SSSIG, etc.)
