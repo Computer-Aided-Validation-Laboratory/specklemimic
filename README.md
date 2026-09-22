@@ -19,8 +19,8 @@ The repository is structured to maintain a clear and accessible workflow for the
 
 ### Focus 1: Speckle Quality Metrics & Statistics
 **Priority Reading:**
-* Dong, Y. L., & Pan, B. (2017). *A Review of Speckle Pattern Fabrication and Assessment for Digital Image Correlation.* Experimental Mechanics, 57(8), 1161–1181. [[DOI](https://doi.org/10.1007/[...])]
-> *Note: This is being treated as a hub for literature, It has the original references for various metrics and fabrication techniques that I am looking into as I read this paper.*
+* Su, Yong, Qingchuan Zhang, and Zeren Gao. “Statistical Model for Speckle Pattern Optimization.” Optics Express 25, no. 24 (2017): 30259–75. [[DOI](https://doi.org/10.1364/OE.25.030259.)]
+> *Note: This paper should tell me a decent bit about speckle statistics such as speckle size, distribution, power spectra etc.*
 
 ### Focus 2: Procedural Reconstruction Techniques
 **Background Reading:**
@@ -36,6 +36,6 @@ The repository is structured to maintain a clear and accessible workflow for the
 
 Keeping a running tally of the review process:
 
-* **Papers Read:** 2
-* **Pages Read:** 46
-* **Lecture Hours:** 1.72
+* **Papers Read:** 9
+* **Pages Read:** 116
+* **Lecture Hours:** 3.00
