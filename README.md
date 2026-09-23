@@ -38,4 +38,4 @@ Keeping a running tally of the review process:
 
 * **Papers Read:** 9
 * **Pages Read:** 122
-* **Lecture Hours:** 10
+* **Lecture Hours:** 11.67
