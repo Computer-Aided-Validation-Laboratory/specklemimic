@@ -37,5 +37,5 @@ The repository is structured to maintain a clear and accessible workflow for the
 Keeping a running tally of the review process:
 
 * **Papers Read:** 9
-* **Pages Read:** 116
-* **Lecture Hours:** 3.00
+* **Pages Read:** 122
+* **Lecture Hours:** 4.76
