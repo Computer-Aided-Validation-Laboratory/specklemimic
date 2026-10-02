@@ -6,7 +6,7 @@
 #include <algorithm>
 
 //MIG Function
-double mig(const double& width, const double& height, const std::vector<Function>& grad_mag){
+double mig(const double width, const double height, const std::vector<Function>& grad_mag){
 
     /*
     
@@ -46,7 +46,7 @@ double mig(const double& width, const double& height, const std::vector<Function
 
 } 
 
-void histogram_generator(const int& nbins, const std::vector<Function>& function, std::vector<Histogram>& histogram, std::vector<Histogram>& probability_density, double& mean, double& variance, double& sentropy){
+void histogram_generator(const int nbins, const std::vector<Function>& function, std::vector<Histogram>& histogram, std::vector<Histogram>& probability_density, double mean, double variance, double sentropy){
 
     /*
     
@@ -112,7 +112,7 @@ void histogram_generator(const int& nbins, const std::vector<Function>& function
     for (int k = 0; k < nbins; k++){
 
         double a_k {min_f + (k + 0.5) * df};
-        variance += std::pow((a_k - mean), 2) * probability_density[k].f;
+        variance += ((a_k - mean) * (a_k - mean)) * probability_density[k].f;
         
         if (probability_density[k].f > 0.0){
             sentropy -= probability_density[k].f * std::log2(probability_density[k].f);
@@ -122,7 +122,7 @@ void histogram_generator(const int& nbins, const std::vector<Function>& function
 
 }
 
-void autocorrelator_ssd(std::vector<Points>& displacements, const std::vector<Function> function, const double subpixel){
+void autocorrelator_ssd(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel){
 
     /*
     
@@ -145,6 +145,8 @@ void autocorrelator_ssd(std::vector<Points>& displacements, const std::vector<Fu
     auto start = std::chrono::high_resolution_clock::now();
 
     //Define some helper variables. 
+
+    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE. 
     int nx = function[0].nx;
     int ny = function[0].ny;
 
@@ -177,7 +179,7 @@ void autocorrelator_ssd(std::vector<Points>& displacements, const std::vector<Fu
                 }
 
                 //Computing the SSD value.
-                displacement.r += std::pow((function[index].f - shifted_function[index].f),2);
+                displacement.r += ((function[index].f - shifted_function[index].f) * (function[index].f - shifted_function[index].f));
 
             }
         }

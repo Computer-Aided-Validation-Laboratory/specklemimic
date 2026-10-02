@@ -4,7 +4,7 @@
 #include "halton/halton.hpp"
 #include <iostream>
 
-std::vector<Points> generate_speckles_random(const double& width, const double&height, const int& count, const double& size){
+std::vector<Points> generate_speckles_random(const double width, const double height, const int count, const double size){
 
     /*
     
@@ -44,7 +44,7 @@ std::vector<Points> generate_speckles_random(const double& width, const double&h
 
 }
 
-std::vector<Function> background_generator(const double& width, const double& height, const double& subpixel){
+std::vector<Function> background_generator(const double width, const double height, const double subpixel){
 
     /*
     

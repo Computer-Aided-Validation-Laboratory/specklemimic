@@ -5,7 +5,7 @@
 #include <vector>
 #include "structures.hpp"
 
-void speckle_numbers(const double& width, const double& height, const double& size, int& output, double& ratio){
+int speckle_numbers(const double width, const double height, const double size, double ratio){
 
     /*
     
@@ -25,13 +25,13 @@ void speckle_numbers(const double& width, const double& height, const double& si
 
     //Calculate areas and then divide them to get output. 
     double area{width * height};
-    double speckleArea{std::numbers::pi * (std::pow((size/2), 2))};
+    double speckleArea{std::numbers::pi * ((size/2) * (size/2))};
 
-    output = std::round((ratio * area)/speckleArea);
+    int output = std::round((ratio * area)/speckleArea);
     
 }
 
-void file_loader(const std::vector<Function>& points, const std::string& filename){
+void file_loader(const std::vector<Function>& points, const std::string filename){
 
     /*
     
@@ -186,7 +186,7 @@ void gradient_mag(const std::vector<Function>& grad_x, const std::vector<Functio
             int index = i * ny + j;
 
             //Populate the gradient magnitude.
-            grad_mag[index].f = std::sqrt(std::pow(grad_x[index].f,2) + std::pow(grad_y[index].f,2));
+            grad_mag[index].f = std::sqrt((grad_x[index].f * grad_x[index].f) + (grad_y[index].f * grad_y[index].f));
             grad_mag[index].nx = nx;
             grad_mag[index].ny = ny;
 
@@ -228,7 +228,7 @@ std::vector<Points> displacement_generator(const int pixelshift){
 
 }
 
-void file_loader_points(const std::vector<Points>& points, const std::string& filename){
+void file_loader_points(const std::vector<Points>& points, const std::string filename){
 
     /*
     
