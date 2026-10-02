@@ -5,22 +5,6 @@
 #include <iostream>
 
 std::vector<Points> generate_speckles_random(const double width, const double height, const int count, const double size){
-
-    /*
-    
-    Function: Speckle Seed Generator
-    Creates the seed points for a speckle pattern. 
-
-    Takes in: 
-    double width                --> Width of the ROI. (x)
-    double height               --> Height of the ROI. (y)
-    int count                   --> Number of seeds required.
-    double size                 --> Radius of the speckle. 
-
-    Outputs:
-    Points vector               --> Generated seed points in the points structure.
-    
-    */
     
     //Create points vector
     std::vector<Points> points;
@@ -45,21 +29,6 @@ std::vector<Points> generate_speckles_random(const double width, const double he
 }
 
 std::vector<Function> background_generator(const double width, const double height, const double subpixel){
-
-    /*
-    
-    Function: Background Generator
-    Fills out the x,y grid for a vector with the function structure. This is the initializer for a bunch of functions. 
-
-    Takes in: 
-    double width                --> Width of the ROI. (x)
-    double height               --> Height of the ROI. (y)
-    double subpixel             --> Subpixel resolution we are going till.
-
-    Outputs:
-    Function vector             --> Background generated function vector.
-    
-    */
 
     //Generate 1D arrays
     int nx = std::round((width / subpixel));
@@ -90,19 +59,6 @@ std::vector<Function> background_generator(const double width, const double heig
 }
 
 void speckle_filler(std::vector<Function>& background, const std::vector<Points>& seeds) {
-
-    /*
-    
-    Function: Speckle Filler
-    Fills out the speckle pattern based on given speckle seeds. 
-
-    Takes in: 
-    Points vector seeds         --> Seed points for the speckle pattern.
-
-    Overwrites:
-    Function vector background  --> Background generated function vector.
-    
-    */
 
     for (auto& point : background) { 
         for (const auto& seed : seeds) {

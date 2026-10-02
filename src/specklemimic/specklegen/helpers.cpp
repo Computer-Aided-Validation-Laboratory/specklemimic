@@ -7,22 +7,6 @@
 
 int speckle_numbers(const double width, const double height, const double size, double ratio){
 
-    /*
-    
-    Function: Speckle Number Calculator
-    Calculates how many speckles are needed to cover a given ratio of the ROI area. 
-
-    Takes in: 
-    double width                --> Width of the ROI. (x)
-    double height               --> Height of the ROI. (y)
-    double size                 --> Diameter of the speckle. 
-    double ratio                --> Target coverage ratio of the ROI.
-
-    Overwrites:
-    int output                  --> Number of speckles required.
-    
-    */
-
     //Calculate areas and then divide them to get output. 
     double area{width * height};
     double speckleArea{std::numbers::pi * ((size/2) * (size/2))};
@@ -32,20 +16,6 @@ int speckle_numbers(const double width, const double height, const double size, 
 }
 
 void file_loader(const std::vector<Function>& points, const std::string filename){
-
-    /*
-    
-    Function: Function File Loader
-    Writes the x, y and f values of a function vector to a csv file. 
-
-    Takes in: 
-    Function vector points      --> Function vector to be saved.
-    string filename             --> Name of the output file.
-
-    Outputs:
-    CSV file                    --> Saved x,y,f data.
-    
-    */
 
     std::ofstream file(filename);
 
@@ -59,19 +29,6 @@ void file_loader(const std::vector<Function>& points, const std::string filename
 }
 
 void gradient_x(const std::vector<Function>& function, std::vector<Function>& grad_x){
-
-    /*
-    
-    Function: X Gradient
-    Computes the x gradient of a function using central differences, with one sided differences at the boundaries. 
-
-    Takes in: 
-    Function vector function    --> Function vector to differentiate.
-
-    Overwrites:
-    Function vector grad_x      --> Gradient of the function in x.
-    
-    */
 
     //Define some helper variables.
     int nx = function[0].nx;
@@ -111,19 +68,6 @@ void gradient_x(const std::vector<Function>& function, std::vector<Function>& gr
 
 void gradient_y(const std::vector<Function>& function, std::vector<Function>& grad_y){
 
-    /*
-    
-    Function: Y Gradient
-    Computes the y gradient of a function using central differences, with one sided differences at the boundaries. 
-
-    Takes in: 
-    Function vector function    --> Function vector to differentiate.
-
-    Overwrites:
-    Function vector grad_y      --> Gradient of the function in y.
-    
-    */
-
     //Define some helper variables. 
     int nx = function[0].nx;
     int ny = function[0].ny;
@@ -162,20 +106,6 @@ void gradient_y(const std::vector<Function>& function, std::vector<Function>& gr
 
 void gradient_mag(const std::vector<Function>& grad_x, const std::vector<Function>& grad_y, std::vector<Function>& grad_mag){
 
-    /*
-    
-    Function: Gradient Magnitude
-    Computes the magnitude of the gradient from its x and y components. 
-
-    Takes in: 
-    Function vector grad_x      --> Gradient of the function in x.
-    Function vector grad_y      --> Gradient of the function in y.
-
-    Overwrites:
-    Function vector grad_mag    --> Magnitude of the gradient.
-    
-    */
-
     //Define some helper variables.
     int nx = grad_x[0].nx;
     int ny = grad_y[0].ny;
@@ -197,19 +127,6 @@ void gradient_mag(const std::vector<Function>& grad_x, const std::vector<Functio
 
 std::vector<Points> displacement_generator(const int pixelshift){
 
-    /*
-    
-    Function: Displacement Generator
-    Creates a square grid of integer pixel displacements from -pixelshift to +pixelshift in x and y. 
-
-    Takes in: 
-    int pixelshift              --> Maximum displacement in pixels.
-
-    Outputs:
-    Points vector               --> Generated displacements in the points structure.
-    
-    */
-
     int side = 2 * pixelshift + 1;
     
     std::vector<Points> displacements;
@@ -229,20 +146,6 @@ std::vector<Points> displacement_generator(const int pixelshift){
 }
 
 void file_loader_points(const std::vector<Points>& points, const std::string filename){
-
-    /*
-    
-    Function: Points File Loader
-    Writes the x, y and r values of a points vector to a csv file. 
-
-    Takes in: 
-    Points vector points        --> Points vector to be saved.
-    string filename             --> Name of the output file.
-
-    Outputs:
-    CSV file                    --> Saved x,y,r data.
-    
-    */
    
     std::ofstream file(filename);
 

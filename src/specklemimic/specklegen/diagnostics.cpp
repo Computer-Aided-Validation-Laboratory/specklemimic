@@ -5,23 +5,7 @@
 #include <iostream>
 #include <algorithm>
 
-//MIG Function
-double mig(const double width, const double height, const std::vector<Function>& grad_mag){
-
-    /*
-    
-    Function: MIG
-    Used to compute the mean intensity gradient as a diagnostic for assessing speckle pattern quality.
-
-    Takes in: 
-    double width                --> Width of the ROI. (x)
-    double height               --> Height of the ROI. (y)
-    Function vector grad_mag    --> Gradient magnitude function. 
-
-    Outputs:
-    double mig                  --> Mean intensity gradient. (Single value)
-    
-    */
+double mig(const std::vector<Function>& grad_mag){
 
     //Defining helper variables. 
     int nx = grad_mag[0].nx;
@@ -47,25 +31,6 @@ double mig(const double width, const double height, const std::vector<Function>&
 } 
 
 void histogram_generator(const int nbins, const std::vector<Function>& function, std::vector<Histogram>& histogram, std::vector<Histogram>& probability_density, double mean, double variance, double sentropy){
-
-    /*
-    
-    Function: Histogram Generator
-    Takes the speckle pattern function, spits it into bins to make a histogram. 
-    Computes mean, variance, shannon entropy and outputs that.
-
-    Takes in: 
-    int nbins                   --> Width of the ROI. (x)
-    Function vector function    --> Function for the speckle pattern.
-
-    Overwrites:
-    Histogram vector histogram  --> Pre-initialized histogram vector.
-    Histogram vector p_density  --> Pre-initialized vector to store the probability density, (Variable name is shortened here)
-    double mean                 --> Mean speckle intensity value.
-    double variance             --> Variance in speckle intensity,
-    sentropy                    --> Shannon entropy.
-    
-    */
 
     //Create bin width. 
     double min_f {0.0};
@@ -123,20 +88,6 @@ void histogram_generator(const int nbins, const std::vector<Function>& function,
 }
 
 void autocorrelator_ssd(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel){
-
-    /*
-    
-    Function: SSD Autocorrelator
-    Shifts speckle patterns with artificial displacements to create an autocorrelation landscape using the SSD correlation function.
-
-    Takes in: 
-    double subpixel             --> Subpixel accuracy we want to go to.
-    Function vector function    --> Speckle pattern function.
-
-    Overwrites:
-    Points vector displacement  --> Pre-initialized displacements vector.
-    
-    */
 
     //Console outputs
     std::cout << "SSD (Sum of Squared Differences) Autocorrelator" << std::endl;
@@ -198,20 +149,6 @@ void autocorrelator_ssd(std::vector<Points>& displacements, const std::vector<Fu
 }
 
 void autocorrelator_scc(std::vector<Points>& displacements, const std::vector<Function> function, const double subpixel){
-
-    /*
-    
-    Function: SCC Autocorrelator
-    Shifts speckle patterns with artificial displacements to create an autocorrelation landscape using the SCC correlation function.
-
-    Takes in: 
-    double subpixel             --> Subpixel accuracy we want to go to.
-    Function vector function    --> Speckle pattern function.
-
-    Overwrites:
-    Points vector displacement  --> Pre-initialized displacements vector.
-    
-    */
 
     //Console outputs
     std::cout << "SCC (Standard Cross-Correlation) Autocorrelator" << std::endl;
