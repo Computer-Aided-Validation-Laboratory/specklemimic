@@ -12,12 +12,15 @@ int main(){
     //Get the user defined parameters. 
     double width {500}; //Specify width in pixels. 
     double height {500}; //Specify height in pixels. 
-    double speckleSize {20}; //Specify desired speckle size in pixels.
+    double speckleSize {25}; //Specify desired speckle size in pixels.
     std::string speckle_filename {"output/speckles.csv"}; //Specify speckle filename output.
     double subpixel {0.5}; //Specify what fraction of pixel you want to resolve.
     double ratio {0.7}; //Black to white ratio
     double nbins {20}; //How many bins are needed for speckle intensity statistics.
     int pixelshift {20}; //How many autocorrelation shifts.
+    bool save_speckle {true};
+    bool save_grads {true};
+    bool save_autocorrelators {true};
 
     //CONSOLE OUTPUTS TO START CODE
     std::cout << "-------------" << std::endl;
@@ -45,8 +48,7 @@ int main(){
 
     //GENERATE BASE SPECKLE PATTERN
     //Get the required number of speckles. 
-    int speckleCount {0};
-    speckle_numbers(width, height, speckleSize, speckleCount, ratio);
+    int speckleCount {speckle_numbers(width, height, speckleSize, ratio)};
 
     //Generate the speckles.
     std::vector<Points> points {generate_speckles_random(width, height, speckleCount, speckleSize)}; //Create vector with the structure. 
@@ -58,7 +60,9 @@ int main(){
     speckle_filler(function, points);
 
     //Export raw pattern to a .csv file.
-    file_loader(function, speckle_filename);
+    if (save_speckle == true){
+        file_loader(function, speckle_filename);
+    }
 
     std::cout << "-------------" << std::endl;
     std::cout << "Generation finished, moving to gradient generation" << std::endl;
@@ -74,15 +78,19 @@ int main(){
     gradient_y(function, grad_Y);
 
     //Export gradients to a .csv file.
-    file_loader(grad_X, gradx_filename);
-    file_loader(grad_Y, grady_filename);
-
+    if (save_grads == true){
+        file_loader(grad_X, gradx_filename);
+        file_loader(grad_Y, grady_filename);
+    }
+    
     //Compute the gradient magnitude. 
     std::vector<Function> grad_Mag {background_generator(width, height, subpixel)};
     gradient_mag(grad_X, grad_Y, grad_Mag);
 
     //Export gradient magnitudes to a .csv file.
-    file_loader(grad_Mag, gradmag_filename);
+    if (save_grads == true){
+        file_loader(grad_Mag, gradmag_filename);
+    }
 
     std::cout << "-------------" << std::endl;
     std::cout << "Gradient generation finished, moving to histogram generation and basic statistics" << std::endl;
@@ -110,11 +118,14 @@ int main(){
 
     //Autocorrelation studies using SSD as a correlation function.
     autocorrelator_ssd(displacements, function, subpixel);
-    file_loader_points(displacements, ssdautocorrelator_filename);
+
+    if(save_autocorrelators == true){
+        file_loader_points(displacements, ssdautocorrelator_filename);
+    }   
 
     //Autocorrelation studies using SCC as a correlation function. 
-    autocorrelator_scc(displacements, function, subpixel);
-    file_loader_points(displacements, sccautocorrelator_filename);
+    //autocorrelator_scc(displacements, function, subpixel);
+    //file_loader_points(displacements, sccautocorrelator_filename);
 
     //NOTE: I am still planning on adding more autocorrelations, these will be cool studies to conduct :)
 
