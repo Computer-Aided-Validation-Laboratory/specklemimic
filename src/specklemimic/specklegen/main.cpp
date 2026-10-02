@@ -1,3 +1,18 @@
+/**
+ * @file main.cpp
+ * @author Lavya Ghanwat (Pizzaman2629)
+ * @brief Main Speckle Generator File
+ * 
+ * The user can specify a bunch of important speckle related parameters here and run the speckle generator.
+ * It is possible to direct where the speckle information is saved, provided the directory already exists.
+ * 
+ * @version 0.1
+ * @date 2026-10-02
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
 #include <iostream>
 #include <vector>
 #include "structures.hpp"
