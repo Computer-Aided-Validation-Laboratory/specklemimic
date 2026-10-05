@@ -149,7 +149,7 @@ int main(){
     std::cout << "-------------" << std::endl;
 
     //Generate the MIG (mean intensity gradient).
-    double MIG {mig(width, height, grad_Mag)};    
+    double MIG {mig(grad_Mag)};    
 
     std::cout << "Single Valued Diagnostics: " << "MIG = " << MIG << " | Shannon Entropy = " << sentropy << std::endl;
 
