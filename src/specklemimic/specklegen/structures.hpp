@@ -57,3 +57,10 @@ struct Histogram{
     int n;
     int df;
 };
+
+struct BinnedPoint{
+    double x;
+    double y;
+    double r;
+    double theta;
+};
