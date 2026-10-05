@@ -56,6 +56,12 @@ int main(){
     std::string zssdautocorrelator_filename {"output/zssd_autocorrelator.csv"};
     std::string znssdautocorrelator_filename {"output/znssd_autocorrelator.csv"};
     std::string znccautocorrelator_filename {"output/zncc_autocorrelator.csv"};
+    std::string autogradr_filename {"output/autogradr.csv"};
+    std::string watershedgrad_filename {"output/wshedgrad.csv"}; 
+
+    //VALUES FOR DIAGNOSTICS
+    double safety {1.25}; //Safety factor for binning in watershed radius calculations. 
+    int fallback {40}; //Number of bins to fall back to for watershed radius calculation.
 
     std::cout << "-------------" << std::endl;
     std::cout << "Starting generator" << std::endl;
@@ -179,6 +185,18 @@ int main(){
         file_loader_points(displacements, znccautocorrelator_filename);
     }
 
+    std::cout << "Finished all autocorrelation landscape generation procedures. Generating gradients... " << std::endl;
+
+    std::vector<Points> autograd_r {autocorrelation_grad_r(displacements, pixelshift)};
+
+    std::vector<Points> autograd_2r {autocorrelation_grad_r(autograd_r, pixelshift)};
+
+    if(save_autocorrelators == true){
+        file_loader_points(autograd_r, autogradr_filename);
+    }
+
+    std::cout << "Finished generating all autocorrelation gradients." << std::endl;
+
     std::cout << "-------------" << std::endl;
     std::cout << "Autocorrelation finished, moving to diagnostics." << std::endl;
     std::cout << "-------------" << std::endl;
@@ -187,6 +205,20 @@ int main(){
     double MIG {mig(grad_Mag)};    
 
     std::cout << "Single Valued Diagnostics: " << "MIG = " << MIG << " | Shannon Entropy = " << sentropy << std::endl;
+
+    int optimalsectors {optimal_sector_count(pixelshift, safety, fallback)};
+    double watershed_radius {0.0};
+
+    std::vector<BinnedPoint> watershed_surface_grad {
+        watershed_gradient(autograd_r, autograd_2r, displacements, pixelshift, optimalsectors, watershed_radius)
+    };
+
+    double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
+
+    std::cout << "Finished Autocorrelation Diagnostic Calculations using Gradients | " << "Watershed Radius = " << watershed_radius 
+    << " | Peak Sharpness = " << auto_peaksharp << std::endl;
+
+    file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
 
     //End benchmarking timer
     auto end = std::chrono::high_resolution_clock::now();

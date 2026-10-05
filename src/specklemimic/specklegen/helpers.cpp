@@ -142,6 +142,16 @@ std::vector<Points> displacement_generator(const int pixelshift){
             index++;
         }
     }
+
+    /*
+    This loop will return displacements that follow this indexing logic:
+    index = (i * ny) + j;
+    Provided of course that i,j here run from zero. 
+
+    In this case nx = ny = 2 * pixelshift + 1;
+    So the index formula here is: 
+    index = (i * (2 * pixelshift - 1)) + j;
+    */
     
     return displacements;
 
@@ -158,4 +168,27 @@ void file_loader_points(const std::vector<Points>& points, const std::string fil
     }
 
     std::cout << "Saved file to: " << filename << std::endl;
+
+}
+
+int optimal_sector_count(const int pixelshift, const double safety, const int fallback){
+
+    int sectors {static_cast<int>(std::ceil(2.0 * std::numbers::pi * pixelshift * safety))};
+
+    return std::max(sectors, fallback);
+
+}
+
+void file_loader_binned_points(const std::vector<BinnedPoint>& points, const std::string filename){
+   
+    std::ofstream file(filename);
+
+    file << "x,y,f \n";
+
+    for(const auto &p : points){
+        file << p.x << "," << p.y << "," << p.r << "\n";
+    }
+
+    std::cout << "Saved file to: " << filename << std::endl;
+
 }

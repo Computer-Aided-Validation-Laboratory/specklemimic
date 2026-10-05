@@ -103,3 +103,52 @@ void autocorrelator_znssd(std::vector<Points>& displacements, const std::vector<
  * @param subpixel Subpixel accuracy we want to go to.
  */
 void autocorrelator_zncc(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel);
+
+
+/**
+ * @brief Radial Gradient for Autocorrelation Landscapes.
+ * 
+ * This function computes the radial derivative of any given autocorrelation landscape. This is used in further diagnostics. 
+ * It employs central differencing for interior points while resorting to backward/forward differencing for boundaries.
+ * 
+ * @param displacements Input autocorrelation landscape.
+ * @param pixelshift Used to calculate displacement domain.
+ * @return std::vector<Points> Output gradient.
+ */
+std::vector<Points> autocorrelation_grad_r(const std::vector<Points>& displacements, const int pixelshift);
+
+
+/**
+ * @brief Watershed Contour using Gradients.
+ * 
+ * Uses the closest minima as a way to compute the watershed surface of an autocorrelation landscape. 
+ * This currently has the drawback that it is very unstable to noisy landscapes, this can be improved via smoothing, etc.
+ * 
+ * @param grad_r First order gradient of autocorrelation landscape.
+ * @param grad_2r Second order gradient of autocorrelation landscape.
+ * @param displacements Input autocorrelation landscape.
+ * @param pixelshift Used to calculate displacement domain.
+ * @param optimalsectors Number of sectors needed for binning to resolve grid properly with a 1px delta.
+ * @return std::vector<BinnedPoint> Output watershed surface/line.
+ */
+std::vector<BinnedPoint> watershed_gradient(
+    const std::vector<Points>& grad_r, 
+    const std::vector<Points>& grad_2r, 
+    const std::vector<Points>& displacements, 
+    const int pixelshift, 
+    const int optimalsectors,
+    double& watershed_radius
+);
+
+
+/**
+ * @brief Autocorrelation Peak Sharpness
+ * 
+ * Spans a 4 pixel wide rectangular ring around the peak and finds the average gradient there. 
+ * This acts as an indicator of peak sharpness. If it is higher, then we have a sharper peak.
+ * 
+ * @param grad_r Input gradients for autocorrelation landscape.
+ * @param pixelshift Used to calculate displacement domain.
+ * @return double Autocorrelation Peak Sharpness.
+ */
+double autocorrelation_peak(const std::vector<Points>& grad_r, const int pixelshift);

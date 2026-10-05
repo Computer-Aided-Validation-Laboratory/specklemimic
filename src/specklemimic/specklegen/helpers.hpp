@@ -96,3 +96,27 @@ std::vector<Points> displacement_generator(const int pixelshift);
  * @param filename Name of the output file.
  */
 void file_loader_points(const std::vector<Points>& points, const std::string filename);
+
+
+/**
+ * @brief Function to count optimal number of radial sectors. 
+ * 
+ * This is used when trying to bin stuff radially while doing autocorrelation calculations. Especially in the watershed radius.
+ * 
+ * @param pixelshift Maximum displacement in pixels.
+ * @param safety Safety factor to overpredict the bins by.
+ * @param fallback The number of bins should not go below this fallback to keep things reasonable.
+ * @return int The number of sectors needed by the autocorrelation diagnostic.
+ */
+int optimal_sector_count(const int pixelshift, const double safety, const int fallback);
+
+
+/**
+ * @brief Binned Point File Loader
+ * 
+ * Writes the x, y and f (r) values of a binned point vector to a csv file.
+ * 
+ * @param points Binned point vector to be saved.
+ * @param filename Name of the output file.
+ */
+void file_loader_binned_points(const std::vector<BinnedPoint>& points, const std::string filename);
