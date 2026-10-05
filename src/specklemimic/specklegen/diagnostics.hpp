@@ -62,4 +62,44 @@ void autocorrelator_ssd(std::vector<Points>& displacements, const std::vector<Fu
  * @param function Speckle pattern function.
  * @param subpixel Subpixel accuracy we want to go to.
  */
-void autocorrelator_scc(std::vector<Points>& displacements, const std::vector<Function> function, const double subpixel);
+void autocorrelator_scc(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel);
+
+
+/**
+ * @brief NSSD Autocorrelator
+ * 
+ * @param displacements Shifts speckle patterns with artificial displacements to create an autocorrelation landscape using the NSSD correlation function.
+ * @param function Speckle pattern function.
+ * @param subpixel Subpixel accuracy we want to go to.
+ */
+void autocorrelator_nssd(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel);
+
+
+/**
+ * @brief ZSSD Autocorrelator
+ * 
+ * @param displacements Shifts speckle patterns with artificial displacements to create an autocorrelation landscape using the ZSSD correlation function.
+ * @param function Speckle pattern function.
+ * @param subpixel Subpixel accuracy we want to go to.
+ */
+void autocorrelator_zssd(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel);
+
+
+/**
+ * @brief ZNSSD Autocorrelator
+ * 
+ * @param displacements Shifts speckle patterns with artificial displacements to create an autocorrelation landscape using the ZNSSD correlation function.
+ * @param function Speckle pattern function.
+ * @param subpixel Subpixel accuracy we want to go to.
+ */
+void autocorrelator_znssd(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel);
+
+
+/**
+ * @brief ZNCC Autocorrelator
+ * 
+ * @param displacements Shifts speckle patterns with artificial displacements to create an autocorrelation landscape using the ZNSSD correlation function.
+ * @param function Speckle pattern function.
+ * @param subpixel Subpixel accuracy we want to go to.
+ */
+void autocorrelator_zncc(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel);

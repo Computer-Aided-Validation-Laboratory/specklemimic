@@ -52,6 +52,10 @@ int main(){
     std::string gradmag_filename {"output/grad_mag.csv"};
     std::string ssdautocorrelator_filename {"output/ssd_autocorrelator.csv"};
     std::string sccautocorrelator_filename {"output/scc_autocorrelator.csv"};
+    std::string nssdautocorrelator_filename {"output/nssd_autocorrelator.csv"};
+    std::string zssdautocorrelator_filename {"output/zssd_autocorrelator.csv"};
+    std::string znssdautocorrelator_filename {"output/znssd_autocorrelator.csv"};
+    std::string znccautocorrelator_filename {"output/zncc_autocorrelator.csv"};
 
     std::cout << "-------------" << std::endl;
     std::cout << "Starting generator" << std::endl;
@@ -131,6 +135,7 @@ int main(){
     //AUTOCORRELATION!!
     std::vector<Points> displacements {displacement_generator(pixelshift)};
 
+    /*
     //Autocorrelation studies using SSD as a correlation function.
     autocorrelator_ssd(displacements, function, subpixel);
 
@@ -139,10 +144,40 @@ int main(){
     }   
 
     //Autocorrelation studies using SCC as a correlation function. 
-    //autocorrelator_scc(displacements, function, subpixel);
-    //file_loader_points(displacements, sccautocorrelator_filename);
+    autocorrelator_scc(displacements, function, subpixel);
 
-    //NOTE: I am still planning on adding more autocorrelations, these will be cool studies to conduct :)
+    if(save_autocorrelators == true){
+        file_loader_points(displacements, sccautocorrelator_filename);
+    }
+
+    //Autucorrelation studies using NSSD as a correlation function. 
+    autocorrelator_nssd(displacements, function, subpixel);
+
+    if(save_autocorrelators == true){
+        file_loader_points(displacements, zssdautocorrelator_filename);
+    }
+
+    //Autocorrelation studies using ZSSD as a correlation function. 
+    autocorrelator_zssd(displacements, function, subpixel);
+
+    if(save_autocorrelators == true){
+        file_loader_points(displacements, zssdautocorrelator_filename);
+    }
+
+    //Autocorrelation studies using ZNSSD as a correlation function. 
+    autocorrelator_znssd(displacements, function, subpixel);
+
+    if(save_autocorrelators == true){
+        file_loader_points(displacements, znssdautocorrelator_filename);
+    }
+    */
+
+    //Autocorrelation studies using ZNCC as a correlation function. 
+    autocorrelator_zncc(displacements, function, subpixel);
+
+    if(save_autocorrelators == true){
+        file_loader_points(displacements, znccautocorrelator_filename);
+    }
 
     std::cout << "-------------" << std::endl;
     std::cout << "Autocorrelation finished, moving to diagnostics." << std::endl;
