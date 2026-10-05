@@ -12,6 +12,8 @@ int speckle_numbers(const double width, const double height, const double size, 
     double speckleArea{std::numbers::pi * ((size/2) * (size/2))};
 
     int output = std::round((ratio * area)/speckleArea);
+
+    return output;
     
 }
 
