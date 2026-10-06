@@ -31,7 +31,15 @@ double mig(const std::vector<Function>& grad_mag){
 
 } 
 
-void histogram_generator(const int nbins, const std::vector<Function>& function, std::vector<Histogram>& histogram, std::vector<Histogram>& probability_density, double mean, double variance, double sentropy){
+void histogram_generator(
+    const int nbins, 
+    const std::vector<Function>& function, 
+    std::vector<Histogram>& histogram, 
+    std::vector<Histogram>& probability_density, 
+    double mean, 
+    double variance, 
+    double sentropy)
+{
 
     //Create bin width. 
     double min_f {0.0};
@@ -88,7 +96,11 @@ void histogram_generator(const int nbins, const std::vector<Function>& function,
 
 }
 
-void autocorrelator_ssd(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel){
+void autocorrelator_ssd(
+    std::vector<Points>& displacements, 
+    const std::vector<Function>& function, 
+    const double subpixel)
+{
 
     //Console outputs
     std::cout << "SSD (Sum of Squared Differences) Autocorrelator" << std::endl;
@@ -149,7 +161,11 @@ void autocorrelator_ssd(std::vector<Points>& displacements, const std::vector<Fu
 
 }
 
-void autocorrelator_scc(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel){
+void autocorrelator_scc(
+    std::vector<Points>& displacements, 
+    const std::vector<Function>& function, 
+    const double subpixel)
+{
 
     //Console outputs
     std::cout << "SCC (Standard Cross-Correlation) Autocorrelator" << std::endl;
@@ -213,7 +229,11 @@ void autocorrelator_scc(std::vector<Points>& displacements, const std::vector<Fu
 
 }
 
-void autocorrelator_nssd(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel){
+void autocorrelator_nssd(
+    std::vector<Points>& displacements, 
+    const std::vector<Function>& function, 
+    const double subpixel)
+{
 
     //Console outputs
     std::cout << "NSSD (Normalized Sum of Squared Differences) Autocorrelator" << std::endl;
@@ -295,7 +315,11 @@ void autocorrelator_nssd(std::vector<Points>& displacements, const std::vector<F
 
 }
 
-void autocorrelator_zssd(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel){
+void autocorrelator_zssd(
+    std::vector<Points>& displacements, 
+    const std::vector<Function>& function, 
+    const double subpixel)
+{
 
     //Console outputs
     std::cout << "ZSSD (Zero Mean Sum of Squared Differences) Autocorrelator" << std::endl;
@@ -378,7 +402,11 @@ void autocorrelator_zssd(std::vector<Points>& displacements, const std::vector<F
 
 }
 
-void autocorrelator_znssd(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel){
+void autocorrelator_znssd(
+    std::vector<Points>& displacements, 
+    const std::vector<Function>& function, 
+    const double subpixel)
+{
 
     //Console outputs
     std::cout << "ZNSSD (Zero Mean Normalized Sum of Squared Differences) Autocorrelator" << std::endl;
@@ -481,7 +509,11 @@ void autocorrelator_znssd(std::vector<Points>& displacements, const std::vector<
 
 }
 
-void autocorrelator_zncc(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel){
+void autocorrelator_zncc(
+    std::vector<Points>& displacements, 
+    const std::vector<Function>& function, 
+    const double subpixel)
+{
 
     //Console outputs
     std::cout << "ZNCC (Zero Normalized Cross-Correlation) Autocorrelator" << std::endl;
@@ -775,7 +807,10 @@ std::vector<BinnedPoint> watershed_gradient(
     return minima;
 }
 
-double autocorrelation_peak(const std::vector<Points>& grad_r, const int pixelshift){
+double autocorrelation_peak(
+    const std::vector<Points>& grad_r, 
+    const int pixelshift)
+{
 
     //Initialize required variables. 
     int ny = (2 * pixelshift) + 1;
@@ -808,5 +843,126 @@ double autocorrelation_peak(const std::vector<Points>& grad_r, const int pixelsh
     auto_peak /= perimeter_count;
 
     return auto_peak;
+
+}
+
+void autocorrelation_peak_comp(
+    const std::vector<Points>& grad_r, 
+    const std::vector<Points> & grad_2r, 
+    const int optimalsectors, 
+    const int pixelshift, 
+    const std::vector<Points>& displacements,
+    double& peak_max, 
+    double& peak_comp)
+{
+    
+     //Initialize empty vector.
+    std::vector<BinnedPoint> maxima;
+    
+    //Initialize grid information. 
+    int ny = (2 * pixelshift) + 1;
+
+    //Bin Minima.
+    double dtheta {(2 * std::numbers::pi) / optimalsectors};
+
+    //Construct output vector for angular bins.
+    //Fallback to boundadry if nothing correct is found.
+    maxima.resize(optimalsectors);
+
+    //Track minimum distance found per sector
+    const double max_domain_r = std::sqrt(2.0) * pixelshift;
+
+    //Loop over function to isolate boundary.
+    for (int i = 0; i < ny; ++i) {
+        for (int j = 0; j < ny; ++j) {
+            
+            //Check boundaries only.
+            if (i == 0 || i == ny - 1 || j == 0 || j == ny - 1) {
+                int index = (ny * i) + j;
+
+                double dist = std::sqrt((grad_r[index].x * grad_r[index].x) + (grad_r[index].y * grad_r[index].y));
+                double theta = std::atan2(grad_r[index].y, grad_r[index].x);
+                if (theta < 0.0) theta += 2.0 * std::numbers::pi;
+
+                int sector_idx = static_cast<int>(std::floor(theta / dtheta)) % optimalsectors;
+
+                maxima[sector_idx].x = grad_r[index].x;
+                maxima[sector_idx].y = grad_r[index].y;
+                maxima[sector_idx].r = displacements[index].r;
+                maxima[sector_idx].theta = theta;
+            }
+        }
+    }
+
+    //Construct Minima Function
+    for(int i = 0; i < ny; i++){ 
+        for(int j = 0; j < ny; j++){ 
+
+            int index = (ny * i) + j; 
+
+            double dist = std::sqrt((grad_r[index].x * grad_r[index].x) + (grad_r[index].y * grad_r[index].y));
+            
+            //Avoid the centre. That would be bad.
+            if (dist < 1e-3) continue;
+
+            //Sort for minima
+            bool minima_condition {(std::abs(grad_r[index].r) < 1e-3) && (grad_2r[index].r > 0.0)};
+            if (minima_condition == true){
+
+                //Sort minima into bins.
+                double theta = std::atan2(grad_r[index].y, grad_r[index].x);
+                if (theta < 0.0) theta += 2.0 * std::numbers::pi; //So that all angles are in the domain.
+
+                double angular_width = std::atan2(1.0, dist);
+
+                //Here basically, we are finding the overlap of a pixel with multiple bins. 
+                //If there is an overlap, we assign the same pixel to multiple bins to avoid any gaps as we move along the grid.
+                int start_sector = static_cast<int>(std::floor((theta - angular_width) / dtheta));
+                int end_sector   = static_cast<int>(std::ceil((theta + angular_width) / dtheta));
+
+                for (int s = start_sector; s <= end_sector; ++s) {
+                    int sector_idx = (s % optimalsectors + optimalsectors) % optimalsectors;
+
+                    maxima[sector_idx].x = grad_r[index].x;
+                    maxima[sector_idx].y = grad_r[index].y;
+                    maxima[sector_idx].r = displacements[index].r;
+                    maxima[sector_idx].theta = theta;
+                }
+            }
+        }
+    }
+
+    //Get rid of any (0,0) points that can fall through.
+    std::erase_if(maxima, [](const BinnedPoint& p) {
+        return (std::abs(p.x) < 1e-6 && std::abs(p.y) < 1e-6);
+    });
+
+    peak_max = 0.0;
+    peak_comp = 0.0;
+    double mean {0.0};
+
+    //Compute maximum distance and the variance.
+    for(auto point : maxima){
+
+        mean += point.r;     
+        if(point.r >= peak_max){
+            peak_max = point.r;
+        }
+
+    }
+
+    //Get zero index.
+    int zero_index = ((ny / 2) * ny) + (ny / 2);
+
+    peak_max = std::abs(displacements[zero_index].r - peak_max);
+
+    mean /= maxima.size();
+
+    for(auto point: maxima){
+        peak_comp += (point.r - mean) * (point.r - mean);
+    }
+
+    peak_comp /= maxima.size();
+    peak_comp = std::sqrt(peak_comp);
 
 }

@@ -40,7 +40,14 @@ double mig(const std::vector<Function>& grad_mag);
  * @param variance Variance in speckle intensity.
  * @param sentropy Shannon entropy.
  */
-void histogram_generator(const int nbins, const std::vector<Function>& function, std::vector<Histogram>& histogram, std::vector<Histogram>& probability_density, double mean, double variance, double sentropy);
+void histogram_generator(
+    const int nbins, 
+    const std::vector<Function>& function, 
+    std::vector<Histogram>& histogram, 
+    std::vector<Histogram>& probability_density, 
+    double mean, 
+    double variance, 
+    double sentropy);
 
 
 /**
@@ -52,7 +59,10 @@ void histogram_generator(const int nbins, const std::vector<Function>& function,
  * @param function Speckle pattern function.
  * @param subpixel Subpixel accuracy we want to go to.
  */
-void autocorrelator_ssd(std::vector<Points>& displacements, const std::vector<Function> function, const double subpixel);
+void autocorrelator_ssd(
+    std::vector<Points>& displacements, 
+    const std::vector<Function> function, 
+    const double subpixel);
 
 
 /**
@@ -62,7 +72,10 @@ void autocorrelator_ssd(std::vector<Points>& displacements, const std::vector<Fu
  * @param function Speckle pattern function.
  * @param subpixel Subpixel accuracy we want to go to.
  */
-void autocorrelator_scc(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel);
+void autocorrelator_scc(
+    std::vector<Points>& displacements, 
+    const std::vector<Function>& function, 
+    const double subpixel);
 
 
 /**
@@ -72,7 +85,10 @@ void autocorrelator_scc(std::vector<Points>& displacements, const std::vector<Fu
  * @param function Speckle pattern function.
  * @param subpixel Subpixel accuracy we want to go to.
  */
-void autocorrelator_nssd(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel);
+void autocorrelator_nssd(
+    std::vector<Points>& displacements, 
+    const std::vector<Function>& function, 
+    const double subpixel);
 
 
 /**
@@ -82,7 +98,10 @@ void autocorrelator_nssd(std::vector<Points>& displacements, const std::vector<F
  * @param function Speckle pattern function.
  * @param subpixel Subpixel accuracy we want to go to.
  */
-void autocorrelator_zssd(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel);
+void autocorrelator_zssd(
+    std::vector<Points>& displacements, 
+    const std::vector<Function>& function, 
+    const double subpixel);
 
 
 /**
@@ -92,7 +111,10 @@ void autocorrelator_zssd(std::vector<Points>& displacements, const std::vector<F
  * @param function Speckle pattern function.
  * @param subpixel Subpixel accuracy we want to go to.
  */
-void autocorrelator_znssd(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel);
+void autocorrelator_znssd(
+    std::vector<Points>& displacements, 
+    const std::vector<Function>& function, 
+    const double subpixel);
 
 
 /**
@@ -102,7 +124,10 @@ void autocorrelator_znssd(std::vector<Points>& displacements, const std::vector<
  * @param function Speckle pattern function.
  * @param subpixel Subpixel accuracy we want to go to.
  */
-void autocorrelator_zncc(std::vector<Points>& displacements, const std::vector<Function>& function, const double subpixel);
+void autocorrelator_zncc(
+    std::vector<Points>& displacements, 
+    const std::vector<Function>& function, 
+    const double subpixel);
 
 
 /**
@@ -115,7 +140,9 @@ void autocorrelator_zncc(std::vector<Points>& displacements, const std::vector<F
  * @param pixelshift Used to calculate displacement domain.
  * @return std::vector<Points> Output gradient.
  */
-std::vector<Points> autocorrelation_grad_r(const std::vector<Points>& displacements, const int pixelshift);
+std::vector<Points> autocorrelation_grad_r(
+    const std::vector<Points>& displacements, 
+    const int pixelshift);
 
 
 /**
@@ -151,4 +178,31 @@ std::vector<BinnedPoint> watershed_gradient(
  * @param pixelshift Used to calculate displacement domain.
  * @return double Autocorrelation Peak Sharpness.
  */
-double autocorrelation_peak(const std::vector<Points>& grad_r, const int pixelshift);
+double autocorrelation_peak(
+    const std::vector<Points>& grad_r, 
+    const int pixelshift);
+
+
+/**
+ * @brief Autocorrelation Primary and Secondary Peak Comparison
+ * 
+ * Calculates the distance between primary peak and biggest secondary peak.
+ * Also calculates the variance between all maxima in the landscape to give some good indicators.
+ * Boundaries default as maxima.
+ * 
+ * @param grad_r First order radial gradient of autocrrelation landscape.
+ * @param grad_2r Second order radial gradient of autocorrelation landscape.
+ * @param optimalsectors Number of sectors needed for binning to resolve grid properly with a low delta.
+ * @param pixelshift Used to calculate displacement domain.
+ * @param displacements Input autocorrelation landscape
+ * @param peak_max Output peak comparison between biggest secondary peak.
+ * @param peak_comp Output standard deviation of all secondary peaks.
+ */
+void autocorrelation_peak_comp(
+    const std::vector<Points>& grad_r, 
+    const std::vector<Points> & grad_2r, 
+    const int optimalsectors, 
+    const int pixelshift, 
+    const std::vector<Points>& displacements,
+    double& peak_max, 
+    double& peak_comp);
