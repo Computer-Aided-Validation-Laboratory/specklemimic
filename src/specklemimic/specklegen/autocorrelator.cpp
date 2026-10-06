@@ -13,8 +13,8 @@ void autocorrelator_ssd(
 {
 
     //Console outputs
-    std::cout << "SSD (Sum of Squared Differences) Autocorrelator" << std::endl;
-    std::cout << "Starting autocorrelation landscape generation for " << displacements.size() << " displacements." << std::endl;
+    std::cout << "(SSD) SSD (Sum of Squared Differences) Autocorrelator" << std::endl;
+    std::cout << "(SSD) Starting autocorrelation landscape generation for " << displacements.size() << " displacements." << std::endl;
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -67,7 +67,7 @@ void autocorrelator_ssd(
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> duration_ms = end - start;
 
-    std::cout << "Finished generating the autocorrelation landscape in " << duration_ms.count()/1000 << "s" << std::endl;
+    std::cout << "(SSD) Finished generating the autocorrelation landscape in " << duration_ms.count()/1000 << "s" << std::endl;
 
 }
 
@@ -78,8 +78,8 @@ void autocorrelator_scc(
 {
 
     //Console outputs
-    std::cout << "SCC (Standard Cross-Correlation) Autocorrelator" << std::endl;
-    std::cout << "Starting autocorrelation landscape generation for " << displacements.size() << " displacements." << std::endl;
+    std::cout << "(SCC) SCC (Standard Cross-Correlation) Autocorrelator" << std::endl;
+    std::cout << "(SCC) Starting autocorrelation landscape generation for " << displacements.size() << " displacements." << std::endl;
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -135,7 +135,7 @@ void autocorrelator_scc(
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> duration_ms = end - start;
 
-    std::cout << "Finished generating the autocorrelation landscape in " << duration_ms.count()/1000 << "s" << std::endl;
+    std::cout << "(SCC) Finished generating the autocorrelation landscape in " << duration_ms.count()/1000 << "s" << std::endl;
 
 }
 
@@ -146,8 +146,8 @@ void autocorrelator_nssd(
 {
 
     //Console outputs
-    std::cout << "NSSD (Normalized Sum of Squared Differences) Autocorrelator" << std::endl;
-    std::cout << "Starting autocorrelation landscape generation for " << displacements.size() << " displacements." << std::endl;
+    std::cout << "(NSSD) NSSD (Normalized Sum of Squared Differences) Autocorrelator" << std::endl;
+    std::cout << "(NSSD) Starting autocorrelation landscape generation for " << displacements.size() << " displacements." << std::endl;
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -221,7 +221,7 @@ void autocorrelator_nssd(
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> duration_ms = end - start;
 
-    std::cout << "Finished generating the autocorrelation landscape in " << duration_ms.count()/1000 << "s" << std::endl;
+    std::cout << "(NSSD) Finished generating the autocorrelation landscape in " << duration_ms.count()/1000 << "s" << std::endl;
 
 }
 
@@ -232,8 +232,8 @@ void autocorrelator_zssd(
 {
 
     //Console outputs
-    std::cout << "ZSSD (Zero Mean Sum of Squared Differences) Autocorrelator" << std::endl;
-    std::cout << "Starting autocorrelation landscape generation for " << displacements.size() << " displacements." << std::endl;
+    std::cout << "(ZSSD) ZSSD (Zero Mean Sum of Squared Differences) Autocorrelator" << std::endl;
+    std::cout << "(ZSSD) Starting autocorrelation landscape generation for " << displacements.size() << " displacements." << std::endl;
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -308,7 +308,7 @@ void autocorrelator_zssd(
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> duration_ms = end - start;
 
-    std::cout << "Finished generating the autocorrelation landscape in " << duration_ms.count()/1000 << "s" << std::endl;
+    std::cout << "(ZSSD) Finished generating the autocorrelation landscape in " << duration_ms.count()/1000 << "s" << std::endl;
 
 }
 
@@ -319,8 +319,8 @@ void autocorrelator_znssd(
 {
 
     //Console outputs
-    std::cout << "ZNSSD (Zero Mean Normalized Sum of Squared Differences) Autocorrelator" << std::endl;
-    std::cout << "Starting autocorrelation landscape generation for " << displacements.size() << " displacements." << std::endl;
+    std::cout << "(ZNSSD) ZNSSD (Zero Mean Normalized Sum of Squared Differences) Autocorrelator" << std::endl;
+    std::cout << "(ZNSSD) Starting autocorrelation landscape generation for " << displacements.size() << " displacements." << std::endl;
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -415,7 +415,7 @@ void autocorrelator_znssd(
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> duration_ms = end - start;
 
-    std::cout << "Finished generating the autocorrelation landscape in " << duration_ms.count()/1000 << "s" << std::endl;
+    std::cout << "(ZNSSD) Finished generating the autocorrelation landscape in " << duration_ms.count()/1000 << "s" << std::endl;
 
 }
 
@@ -426,8 +426,8 @@ void autocorrelator_zncc(
 {
 
     //Console outputs
-    std::cout << "ZNCC (Zero Normalized Cross-Correlation) Autocorrelator" << std::endl;
-    std::cout << "Starting autocorrelation landscape generation for " << displacements.size() << " displacements." << std::endl;
+    std::cout << "(ZNCC) ZNCC (Zero Normalized Cross-Correlation) Autocorrelator" << std::endl;
+    std::cout << "(ZNCC) Starting autocorrelation landscape generation for " << displacements.size() << " displacements." << std::endl;
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -522,6 +522,6 @@ void autocorrelator_zncc(
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> duration_ms = end - start;
 
-    std::cout << "Finished generating the autocorrelation landscape in " << duration_ms.count()/1000 << "s" << std::endl;
+    std::cout << "(ZNCC) Finished generating the autocorrelation landscape in " << duration_ms.count()/1000 << "s" << std::endl;
 
 }

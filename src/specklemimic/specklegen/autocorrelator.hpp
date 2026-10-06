@@ -27,7 +27,7 @@
  */
 void autocorrelator_ssd(
     std::vector<Points>& displacements, 
-    const std::vector<Function> function, 
+    const std::vector<Function>& function, 
     const double subpixel);
 
 
