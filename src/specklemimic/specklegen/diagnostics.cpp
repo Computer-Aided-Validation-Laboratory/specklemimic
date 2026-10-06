@@ -31,14 +31,15 @@ double mig(const std::vector<Function>& grad_mag){
 
 } 
 
+
 void histogram_generator(
     const int nbins, 
     const std::vector<Function>& function, 
     std::vector<Histogram>& histogram, 
     std::vector<Histogram>& probability_density, 
-    double mean, 
-    double variance, 
-    double sentropy)
+    double& mean, 
+    double& variance, 
+    double& sentropy)
 {
 
     //Create bin width. 
@@ -95,6 +96,7 @@ void histogram_generator(
     }
 
 }
+
 
 std::vector<Points> autocorrelation_grad_r(
     const std::vector<Points>& displacements, 
@@ -171,6 +173,7 @@ std::vector<Points> autocorrelation_grad_r(
     return grad_r; 
 
 }
+
 
 std::vector<BinnedPoint> watershed_gradient(
     const std::vector<Points>& grad_r, 
@@ -287,6 +290,7 @@ std::vector<BinnedPoint> watershed_gradient(
     return minima;
 }
 
+
 double autocorrelation_peak(
     const std::vector<Points>& grad_r, 
     const int pixelshift)
@@ -325,6 +329,7 @@ double autocorrelation_peak(
     return auto_peak;
 
 }
+
 
 void autocorrelation_peak_comp(
     const std::vector<Points>& grad_r, 
@@ -444,5 +449,115 @@ void autocorrelation_peak_comp(
 
     peak_comp /= maxima.size();
     peak_comp = std::sqrt(peak_comp);
+
+}
+
+
+std::vector<Points> sssig_heatmap_generator(
+    const int ss_size, 
+    const int ss_step, 
+    const std::vector<Function>& grad_mag, 
+    const double subpixel,
+    const int width,
+    const int height
+)
+{
+
+    //Get nx,ny for actual grid.
+    int nx = grad_mag[0].nx;
+    int ny = grad_mag[0].ny;
+
+    //For subpixel switches. 
+    const int k = static_cast<int>(std::lround(1.0 / subpixel));
+
+    //Get number of subsets
+    int n_ss_x = (width  - 1) / ss_step + 1;
+    int n_ss_y = (height - 1) / ss_step + 1;
+
+    //Odd number logic. 
+    if ((width  - 1) % ss_step != 0) n_ss_x++;
+    if ((height - 1) % ss_step != 0) n_ss_y++;
+
+    //Step from centre. 
+    const int half = ss_size / 2;
+
+    //Initialize empty vector.
+    std::vector<Points> sssig_map;
+    sssig_map.resize(n_ss_x * n_ss_y);
+
+    for(int xs = 0; xs < n_ss_x; xs++){
+
+        //Window Definitions in px. 
+        //Min, max functions are used to implicitly deal with the boundaries.
+        const int cx = std::min(xs * ss_step, width - 1);
+        const int xmin_px = std::max(cx - half, 0);
+        const int xmax_px = std::min(cx - half + ss_size - 1, width - 1);
+
+        //Window Definitions in subpx.
+        const int xmin = xmin_px * k;
+        const int xmax = std::min(xmax_px * k, nx - 1);
+
+        for(int ys = 0; ys < n_ss_y; ys++){
+
+            //Similar manipulation for y.
+            const int cy = std::min(ys * ss_step, height - 1);
+
+            const int ymin_px = std::max(cy - half, 0);
+            const int ymax_px = std::min(cy - half + ss_size - 1, height - 1);
+
+            const int ymin = ymin_px * k;
+            const int ymax = std::min(ymax_px * k, ny - 1);
+
+            //Some Helper Variables
+            int subset_px_count {0};
+            int px_index = xs * n_ss_y + ys;
+            sssig_map[px_index].r = 0.0;
+
+            for(int i = xmin; i <= xmax; i++){
+                for(int j = ymin; j <= ymax; j++){
+                    
+                    int grid_index = i * ny + j;
+
+                    sssig_map[px_index].r += grad_mag[grid_index].f;
+                    subset_px_count++;
+
+                }
+            }
+
+            //Normalize the SSSIG.
+            sssig_map[px_index].r /= subset_px_count;
+            sssig_map[px_index].x = cx;
+            sssig_map[px_index].y = cy;
+
+        }
+    }
+
+    return sssig_map;
+
+}
+
+
+void sssig_deltamap_generator(
+    std::vector<Points>& sssig_heatmap, 
+    double& mean, 
+    double& stddev,
+    const double MIG
+)
+{
+
+    //Get noise addition mean.
+    for(auto& point : sssig_heatmap){
+        point.r = point.r - MIG;
+        mean += point.r;
+    }
+
+    //Get noise addition variance.
+    for(auto& point : sssig_heatmap){
+        stddev += (point.r - mean) * (point.r - mean);
+    }
+
+    //Normalize
+    stddev /= sssig_heatmap.size();
+    stddev = std::sqrt(stddev);
 
 }

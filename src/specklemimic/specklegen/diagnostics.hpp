@@ -19,8 +19,6 @@
 /**
  * @brief Used to compute the mean intensity gradient as a diagnostic for assessing speckle pattern quality.
  * 
- * @param width Width of the ROI. (x)
- * @param height Height of the ROI. (y)
  * @param grad_mag Gradient magnitude function. 
  * @return double Mean intensity gradient. (Single value)
  */
@@ -45,9 +43,9 @@ void histogram_generator(
     const std::vector<Function>& function, 
     std::vector<Histogram>& histogram, 
     std::vector<Histogram>& probability_density, 
-    double mean, 
-    double variance, 
-    double sentropy);
+    double& mean, 
+    double& variance, 
+    double& sentropy);
 
 
 /**
@@ -126,3 +124,45 @@ void autocorrelation_peak_comp(
     const std::vector<Points>& displacements,
     double& peak_max, 
     double& peak_comp);
+
+
+/**
+ * @brief SSSIG Heatmap Generator
+ * 
+ * Calculates a 2D heatmap for SSSIG depending on the user's chosen subset and step size.
+ * Resultin array is in pixels, not in the same grid units as the speckle pattern.
+ * 
+ * @param ss_size Subset Size (pixels)
+ * @param ss_step Step Size (pixels)
+ * @param grad_mag Gradient magnitude function. 
+ * @param subpixel Subpixel accuracy used by grad_mag.
+ * @param width Width of the ROI. (x)
+ * @param height Height of the ROI. (y)
+ * @return std::vector<Points> Output SSSIG map, stored in the points structure.
+ */
+std::vector<Points> sssig_heatmap_generator(
+    const int ss_size, 
+    const int ss_step, 
+    const std::vector<Function>& grad_mag, 
+    const double subpixel,
+    const int width,
+    const int height
+);
+
+
+/**
+ * @brief SSSIG Delta Map Generator
+ * 
+ * This generates the map of how much the SSSIG locally deviates from the MIG.
+ * 
+ * @param sssig_heatmap SSSIG local heatmap, overwritten to become the delta map.
+ * @param mean Output mean of the delta map.
+ * @param stddev Output standard deviation of the delta map.
+ * @param MIG Mean Intensity Gradient for the Speckle Pattern.
+ */
+void sssig_deltamap_generator(
+    std::vector<Points>& sssig_heatmap, 
+    double& mean, 
+    double& stddev,
+    const double MIG
+);
