@@ -20,6 +20,7 @@
 #include "generator.hpp"    
 #include "diagnostics.hpp"
 #include <chrono>
+#include "autocorrelator.hpp"
 
 //MAIN FUNCTION - Used to run the code. 
 int main(){
