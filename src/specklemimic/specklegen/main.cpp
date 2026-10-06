@@ -79,8 +79,19 @@ int main(){
     std::string zssdautocorrelator_filename {autoc_directory + "/" + "zssd_autocorrelator.csv"};
     std::string znssdautocorrelator_filename {autoc_directory + "/" + "znssd_autocorrelator.csv"};
     std::string znccautocorrelator_filename {autoc_directory + "/" + "zncc_autocorrelator.csv"};
-    std::string autogradr_filename {autoc_directory + "/" + "autogradr.csv"};
-    std::string watershedgrad_filename {autoc_directory + "/" + "wshedgrad.csv"}; 
+    //Radial gradient and watershed files are saved per autocorrelator so they do not overwrite each other.
+    std::string ssdautogradr_filename {autoc_directory + "/" + "ssd_autogradr.csv"};
+    std::string ssdwatershedgrad_filename {autoc_directory + "/" + "ssd_wshedgrad.csv"};
+    std::string sccautogradr_filename {autoc_directory + "/" + "scc_autogradr.csv"};
+    std::string sccwatershedgrad_filename {autoc_directory + "/" + "scc_wshedgrad.csv"};
+    std::string nssdautogradr_filename {autoc_directory + "/" + "nssd_autogradr.csv"};
+    std::string nssdwatershedgrad_filename {autoc_directory + "/" + "nssd_wshedgrad.csv"};
+    std::string zssdautogradr_filename {autoc_directory + "/" + "zssd_autogradr.csv"};
+    std::string zssdwatershedgrad_filename {autoc_directory + "/" + "zssd_wshedgrad.csv"};
+    std::string znccautogradr_filename {autoc_directory + "/" + "zncc_autogradr.csv"};
+    std::string znccwatershedgrad_filename {autoc_directory + "/" + "zncc_wshedgrad.csv"};
+    std::string znssdautogradr_filename {autoc_directory + "/" + "znssd_autogradr.csv"};
+    std::string znssdwatershedgrad_filename {autoc_directory + "/" + "znssd_wshedgrad.csv"};
     std::string sssig_filename {sssig_directory + "/" + "sssig_heatmap.csv"};
     std::string sssigdelta_filename {sssig_directory + "/" + "sssig_deltamap.csv"};
 
@@ -181,6 +192,8 @@ int main(){
     //AUTOCORRELATION
     std::vector<Points> displacements {displacement_generator(pixelshift)};
 
+    //---------------------------------------------------------------------------
+
     //Autocorrelation using SSD.
     if (ssd == true){
 
@@ -202,7 +215,7 @@ int main(){
         std::vector<Points> autograd_2r {autocorrelation_grad_r(autograd_r, pixelshift)};
 
         if(save_autocorrelators == true){
-            file_loader_points(autograd_r, autogradr_filename);
+            file_loader_points(autograd_r, ssdautogradr_filename);
         }
 
         std::cout << "(SSD) Computing Autocorrelation Diagnostics..." << std::endl;
@@ -212,7 +225,7 @@ int main(){
         };
 
         if(save_autocorrelators == true){
-            file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
+            file_loader_binned_points(watershed_surface_grad, ssdwatershedgrad_filename);
         }
 
         double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
@@ -255,7 +268,7 @@ int main(){
         std::vector<Points> autograd_2r {autocorrelation_grad_r(autograd_r, pixelshift)};
 
         if(save_autocorrelators == true){
-            file_loader_points(autograd_r, autogradr_filename);
+            file_loader_points(autograd_r, sccautogradr_filename);
         }
 
         std::cout << "(SCC) Computing Autocorrelation Diagnostics..." << std::endl;
@@ -265,7 +278,7 @@ int main(){
         };
 
         if(save_autocorrelators == true){
-            file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
+            file_loader_binned_points(watershed_surface_grad, sccwatershedgrad_filename);
         }
 
         double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
@@ -308,7 +321,7 @@ int main(){
         std::vector<Points> autograd_2r {autocorrelation_grad_r(autograd_r, pixelshift)};
 
         if(save_autocorrelators == true){
-            file_loader_points(autograd_r, autogradr_filename);
+            file_loader_points(autograd_r, nssdautogradr_filename);
         }
 
         std::cout << "(NSSD) Computing Autocorrelation Diagnostics..." << std::endl;
@@ -318,7 +331,7 @@ int main(){
         };
 
         if(save_autocorrelators == true){
-            file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
+            file_loader_binned_points(watershed_surface_grad, nssdwatershedgrad_filename);
         }
 
         double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
@@ -361,7 +374,7 @@ int main(){
         std::vector<Points> autograd_2r {autocorrelation_grad_r(autograd_r, pixelshift)};
 
         if(save_autocorrelators == true){
-            file_loader_points(autograd_r, autogradr_filename);
+            file_loader_points(autograd_r, zssdautogradr_filename);
         }
 
         std::cout << "(ZSSD) Computing Autocorrelation Diagnostics..." << std::endl;
@@ -371,7 +384,7 @@ int main(){
         };
 
         if(save_autocorrelators == true){
-            file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
+            file_loader_binned_points(watershed_surface_grad, zssdwatershedgrad_filename);
         }
 
         double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
@@ -414,7 +427,7 @@ int main(){
         std::vector<Points> autograd_2r {autocorrelation_grad_r(autograd_r, pixelshift)};
 
         if(save_autocorrelators == true){
-            file_loader_points(autograd_r, autogradr_filename);
+            file_loader_points(autograd_r, znccautogradr_filename);
         }
 
         std::cout << "(ZNCC) Computing Autocorrelation Diagnostics..." << std::endl;
@@ -424,7 +437,7 @@ int main(){
         };
 
         if(save_autocorrelators == true){
-            file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
+            file_loader_binned_points(watershed_surface_grad, znccwatershedgrad_filename);
         }
 
         double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
@@ -467,7 +480,7 @@ int main(){
         std::vector<Points> autograd_2r {autocorrelation_grad_r(autograd_r, pixelshift)};
 
         if(save_autocorrelators == true){
-            file_loader_points(autograd_r, autogradr_filename);
+            file_loader_points(autograd_r, znssdautogradr_filename);
         }
 
         std::cout << "(ZNSSD) Computing Autocorrelation Diagnostics..." << std::endl;
@@ -477,7 +490,7 @@ int main(){
         };
 
         if(save_autocorrelators == true){
-            file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
+            file_loader_binned_points(watershed_surface_grad, znssdwatershedgrad_filename);
         }
 
         double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
