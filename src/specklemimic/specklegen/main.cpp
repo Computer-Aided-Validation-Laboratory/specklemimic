@@ -4,9 +4,9 @@
  * @brief Main Speckle Generator File
  * 
  * The user can specify a bunch of important speckle related parameters here and run the speckle generator.
- * It is possible to direct where the speckle information is saved, provided the directory already exists.
+ * It is possible to direct where the speckle information is saved to a custom folder for the run number.
  * 
- * @version 0.1
+ * @version 0.2
  * @date 2026-10-02
  * 
  * @copyright Copyright (c) 2026
@@ -21,15 +21,20 @@
 #include "diagnostics.hpp"
 #include <chrono>
 #include "autocorrelator.hpp"
+#include <filesystem>
 
-//MAIN FUNCTION - Used to run the code. 
+//MAIN FUNCTION.
 int main(){
 
-    //Get the user defined parameters. 
+    //---------------------------------------------------------------------------
+
+    //USER DEFINED PARAMETERS. 
+    //THIS IS THE AREA OF INTEREST
+
     double width {500}; //Specify width in pixels. 
     double height {500}; //Specify height in pixels. 
     double speckleSize {25}; //Specify desired speckle size in pixels.
-    std::string speckle_filename {"output/speckles.csv"}; //Specify speckle filename output.
+    std::string runfolder {"pattern1"}; //Which folder should all the results be saved in.
     double subpixel {0.5}; //Specify what fraction of pixel you want to resolve.
     double ratio {0.7}; //Black to white ratio
     int nbins {20}; //How many bins are needed for speckle intensity statistics.
@@ -40,41 +45,64 @@ int main(){
     int ss_size {20}; //Subset Size for SSSIG Heatmap Calculations.
     int st_size {20}; //Step Size for SSIG Heatmap Calculations.
 
-    //CONSOLE OUTPUTS TO START CODE
-    std::cout << "-------------" << std::endl;
+    double safety {1.25}; //Safety factor for binning in watershed radius calculations. 
+    int fallback {40}; //Number of bins to fall back to for watershed radius calculation.
+
+    //AUTOCORRELATOR FLAGS
+    //Multiple autocorrelators can be turned on or off for diagnostics purposes.
+    bool ssd {false};
+    bool scc {false};
+    bool nssd {false};
+    bool zssd {false};
+    bool zncc {false};
+    bool znssd {true};
+
+    //---------------------------------------------------------------------------
+
+    //FILESAVING
+    std::string grad_directory {runfolder + "/" + "gradients"};
+    std::string autoc_directory {runfolder + "/" + "autocorrelation"};
+    std::string sssig_directory {runfolder + "/" + "sssig"};
+
+    std::filesystem::create_directories(runfolder); //Main Directory
+    std::filesystem::create_directories(grad_directory); //Gradients
+    std::filesystem::create_directories(autoc_directory); //Autocorrelation
+    std::filesystem::create_directories(sssig_directory); //SSSIG
+
+    std::string speckle_filename {runfolder + "/" "speckles.csv"};
+    std::string gradx_filename {grad_directory + "/" + "grad_x.csv"};
+    std::string grady_filename {grad_directory + "/" + "grad_y.csv"};
+    std::string gradmag_filename {grad_directory + "/" + "grad_mag.csv"};
+    std::string ssdautocorrelator_filename {autoc_directory + "/" + "ssd_autocorrelator.csv"};
+    std::string sccautocorrelator_filename {autoc_directory + "/" + "scc_autocorrelator.csv"};
+    std::string nssdautocorrelator_filename {autoc_directory + "/" + "nssd_autocorrelator.csv"};
+    std::string zssdautocorrelator_filename {autoc_directory + "/" + "zssd_autocorrelator.csv"};
+    std::string znssdautocorrelator_filename {autoc_directory + "/" + "znssd_autocorrelator.csv"};
+    std::string znccautocorrelator_filename {autoc_directory + "/" + "zncc_autocorrelator.csv"};
+    std::string autogradr_filename {autoc_directory + "/" + "autogradr.csv"};
+    std::string watershedgrad_filename {autoc_directory + "/" + "wshedgrad.csv"}; 
+    std::string sssig_filename {sssig_directory + "/" + "sssig_heatmap.csv"};
+    std::string sssigdelta_filename {sssig_directory + "/" + "sssig_deltamap.csv"};
+
+    //---------------------------------------------------------------------------
+
+    //START GENERATOR AND BENCHMARKING
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
     std::cout << "SPECKLE GENERATOR" << std::endl;
-    std::cout << "-------------" << std::endl;
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
 
     std::cout << "Generating speckles to: " << speckle_filename << std::endl;
     std::cout << "Pattern Dimensions: " << "Width = " << width << "px | " << "Height = " << height << "px " << std::endl;
     std::cout << "Target speckle size: " << speckleSize << "px" << std::endl;
 
-    //FILENAMES FOR SAVING
-    std::string gradx_filename {"output/grad_x.csv"};
-    std::string grady_filename {"output/grad_y.csv"};
-    std::string gradmag_filename {"output/grad_mag.csv"};
-    std::string ssdautocorrelator_filename {"output/ssd_autocorrelator.csv"};
-    std::string sccautocorrelator_filename {"output/scc_autocorrelator.csv"};
-    std::string nssdautocorrelator_filename {"output/nssd_autocorrelator.csv"};
-    std::string zssdautocorrelator_filename {"output/zssd_autocorrelator.csv"};
-    std::string znssdautocorrelator_filename {"output/znssd_autocorrelator.csv"};
-    std::string znccautocorrelator_filename {"output/zncc_autocorrelator.csv"};
-    std::string autogradr_filename {"output/autogradr.csv"};
-    std::string watershedgrad_filename {"output/wshedgrad.csv"}; 
-    std::string sssig_filename {"output/sssig_heatmap.csv"};
-    std::string sssigdelta_filename {"output/sssig_deltamap.csv"};
-
-    //VALUES FOR DIAGNOSTICS
-    double safety {1.25}; //Safety factor for binning in watershed radius calculations. 
-    int fallback {40}; //Number of bins to fall back to for watershed radius calculation.
-
-    std::cout << "-------------" << std::endl;
+    std::cout << "---------------------------------------------------------------------------------------------------"<< std::endl;
     std::cout << "Starting generator" << std::endl;
-    std::cout << "-------------" << std::endl;
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
 
     //Start validation timer. 
     auto start = std::chrono::high_resolution_clock::now();
 
+    //---------------------------------------------------------------------------
 
     //GENERATE BASE SPECKLE PATTERN
     //Get the required number of speckles. 
@@ -94,9 +122,11 @@ int main(){
         file_loader(function, speckle_filename);
     }
 
-    std::cout << "-------------" << std::endl;
-    std::cout << "Generation finished, moving to gradient generation" << std::endl;
-    std::cout << "-------------" << std::endl;
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
+    std::cout << "Basic pattern generation finished, moving to gradient generation" << std::endl;
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
+
+    //---------------------------------------------------------------------------
 
     //GENERATE GRADIENTS FOR DIAGNOSTICS
     //Create a gradient vectors.
@@ -122,9 +152,11 @@ int main(){
         file_loader(grad_Mag, gradmag_filename);
     }
 
-    std::cout << "-------------" << std::endl;
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
     std::cout << "Gradient generation finished, moving to histogram generation and basic statistics" << std::endl;
-    std::cout << "-------------" << std::endl;
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
+
+    //---------------------------------------------------------------------------
 
     //GENERATE HISTOGRAM AND RELATED DIAGNOSTICS
     std::vector<Histogram> intensity_distribution {};
@@ -137,100 +169,348 @@ int main(){
 
     histogram_generator(nbins, function, intensity_distribution, probability_distribution, mean, variance, sentropy);
 
-    std::cout << "Basic Speckle Statistics: " << "Mean = " << mean << " | Variance = " << variance << std::endl;
+    std::cout << "Finished computing some basic speckle statistics: " << std::endl;
+    std::cout <<  " | Mean = " << mean << " | Variance = " << variance << std::endl;
 
-    std::cout << "-------------" << std::endl;
-    std::cout << "Histogram generation finished, moving to autocorrelation." << std::endl;
-    std::cout << "-------------" << std::endl;
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
+    std::cout << "Histogram and basic statistic generation finished, moving to autocorrelation." << std::endl;
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
 
-    //AUTOCORRELATION!!
+    //---------------------------------------------------------------------------
+
+    //AUTOCORRELATION
     std::vector<Points> displacements {displacement_generator(pixelshift)};
 
-    /*
-    //Autocorrelation studies using SSD as a correlation function.
-    autocorrelator_ssd(displacements, function, subpixel);
+    //Autocorrelation using SSD.
+    if (ssd == true){
 
-    if(save_autocorrelators == true){
-        file_loader_points(displacements, ssdautocorrelator_filename);
-    }   
+        std::cout << "(SSD) Starting autocorrelation workflow using SSD..." << std::endl;
 
-    //Autocorrelation studies using SCC as a correlation function. 
-    autocorrelator_scc(displacements, function, subpixel);
+        autocorrelator_ssd(displacements, function, subpixel);
 
-    if(save_autocorrelators == true){
-        file_loader_points(displacements, sccautocorrelator_filename);
+        if(save_autocorrelators == true){
+            file_loader_points(displacements, ssdautocorrelator_filename);
+        }
+
+        std::cout << "(SSD) Generating Radial Gradients..." << std::endl;
+
+        int optimalsectors {optimal_sector_count(pixelshift, safety, fallback)};
+        double watershed_radius {0.0};
+
+        std::vector<Points> autograd_r {autocorrelation_grad_r(displacements, pixelshift)};
+
+        std::vector<Points> autograd_2r {autocorrelation_grad_r(autograd_r, pixelshift)};
+
+        if(save_autocorrelators == true){
+            file_loader_points(autograd_r, autogradr_filename);
+        }
+
+        std::cout << "(SSD) Computing Autocorrelation Diagnostics..." << std::endl;
+
+        std::vector<BinnedPoint> watershed_surface_grad {
+            watershed_gradient(autograd_r, autograd_2r, displacements, pixelshift, optimalsectors, watershed_radius)
+        };
+
+        if(save_autocorrelators == true){
+            file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
+        }
+
+        double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
+
+        double peak_max {0.0};
+        double peak_var {0.0};
+
+        autocorrelation_peak_comp(autograd_r, autograd_2r, optimalsectors, pixelshift, displacements, peak_max, peak_var);
+
+        std::cout << "(SSD) Diagnostics: " << std::endl;
+        std::cout << " | Watershed Radius = " << watershed_radius
+                  << " | Peak Sharpness = " << auto_peaksharp
+                  << " | Autocorrelation Peak Comparison = " << peak_max
+                  << " | Autocorrelation Standard Deviation Comparison = " << peak_var << " |" << std::endl;
+
+        std::cout << "(SSD) Autocorrelation Workflow Finished." << std::endl;
+
     }
 
-    //Autucorrelation studies using NSSD as a correlation function. 
-    autocorrelator_nssd(displacements, function, subpixel);
+    //---------------------------------------------------------------------------
 
-    if(save_autocorrelators == true){
-        file_loader_points(displacements, zssdautocorrelator_filename);
+    //Autocorrelation using SCC.
+    if (scc == true){
+
+        std::cout << "(SCC) Starting autocorrelation workflow using SCC..." << std::endl;
+
+        autocorrelator_scc(displacements, function, subpixel);
+
+        if(save_autocorrelators == true){
+            file_loader_points(displacements, sccautocorrelator_filename);
+        }
+
+        std::cout << "(SCC) Generating Radial Gradients..." << std::endl;
+
+        int optimalsectors {optimal_sector_count(pixelshift, safety, fallback)};
+        double watershed_radius {0.0};
+
+        std::vector<Points> autograd_r {autocorrelation_grad_r(displacements, pixelshift)};
+
+        std::vector<Points> autograd_2r {autocorrelation_grad_r(autograd_r, pixelshift)};
+
+        if(save_autocorrelators == true){
+            file_loader_points(autograd_r, autogradr_filename);
+        }
+
+        std::cout << "(SCC) Computing Autocorrelation Diagnostics..." << std::endl;
+
+        std::vector<BinnedPoint> watershed_surface_grad {
+            watershed_gradient(autograd_r, autograd_2r, displacements, pixelshift, optimalsectors, watershed_radius)
+        };
+
+        if(save_autocorrelators == true){
+            file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
+        }
+
+        double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
+
+        double peak_max {0.0};
+        double peak_var {0.0};
+
+        autocorrelation_peak_comp(autograd_r, autograd_2r, optimalsectors, pixelshift, displacements, peak_max, peak_var);
+
+        std::cout << "(SCC) Diagnostics: " << std::endl;
+        std::cout << " | Watershed Radius = " << watershed_radius
+                  << " | Peak Sharpness = " << auto_peaksharp
+                  << " | Autocorrelation Peak Comparison = " << peak_max
+                  << " | Autocorrelation Standard Deviation Comparison = " << peak_var << " |" << std::endl;
+
+        std::cout << "(SCC) Autocorrelation Workflow Finished." << std::endl;
+
     }
 
-    //Autocorrelation studies using ZSSD as a correlation function. 
-    autocorrelator_zssd(displacements, function, subpixel);
+    //---------------------------------------------------------------------------
 
-    if(save_autocorrelators == true){
-        file_loader_points(displacements, zssdautocorrelator_filename);
+    //Autocorrelation using NSSD.
+    if (nssd == true){
+
+        std::cout << "(NSSD) Starting autocorrelation workflow using NSSD..." << std::endl;
+
+        autocorrelator_nssd(displacements, function, subpixel);
+
+        if(save_autocorrelators == true){
+            file_loader_points(displacements, nssdautocorrelator_filename);
+        }
+
+        std::cout << "(NSSD) Generating Radial Gradients..." << std::endl;
+
+        int optimalsectors {optimal_sector_count(pixelshift, safety, fallback)};
+        double watershed_radius {0.0};
+
+        std::vector<Points> autograd_r {autocorrelation_grad_r(displacements, pixelshift)};
+
+        std::vector<Points> autograd_2r {autocorrelation_grad_r(autograd_r, pixelshift)};
+
+        if(save_autocorrelators == true){
+            file_loader_points(autograd_r, autogradr_filename);
+        }
+
+        std::cout << "(NSSD) Computing Autocorrelation Diagnostics..." << std::endl;
+
+        std::vector<BinnedPoint> watershed_surface_grad {
+            watershed_gradient(autograd_r, autograd_2r, displacements, pixelshift, optimalsectors, watershed_radius)
+        };
+
+        if(save_autocorrelators == true){
+            file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
+        }
+
+        double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
+
+        double peak_max {0.0};
+        double peak_var {0.0};
+
+        autocorrelation_peak_comp(autograd_r, autograd_2r, optimalsectors, pixelshift, displacements, peak_max, peak_var);
+
+        std::cout << "(NSSD) Diagnostics: " << std::endl;
+        std::cout << " | Watershed Radius = " << watershed_radius
+                  << " | Peak Sharpness = " << auto_peaksharp
+                  << " | Autocorrelation Peak Comparison = " << peak_max
+                  << " | Autocorrelation Standard Deviation Comparison = " << peak_var << " |" << std::endl;
+
+        std::cout << "(NSSD) Autocorrelation Workflow Finished." << std::endl;
+
     }
 
-    //Autocorrelation studies using ZNSSD as a correlation function. 
-    autocorrelator_znssd(displacements, function, subpixel);
+    //---------------------------------------------------------------------------
 
-    if(save_autocorrelators == true){
-        file_loader_points(displacements, znssdautocorrelator_filename);
+    //Autocorrelation using ZSSD.
+    if (zssd == true){
+
+        std::cout << "(ZSSD) Starting autocorrelation workflow using ZSSD..." << std::endl;
+
+        autocorrelator_zssd(displacements, function, subpixel);
+
+        if(save_autocorrelators == true){
+            file_loader_points(displacements, zssdautocorrelator_filename);
+        }
+
+        std::cout << "(ZSSD) Generating Radial Gradients..." << std::endl;
+
+        int optimalsectors {optimal_sector_count(pixelshift, safety, fallback)};
+        double watershed_radius {0.0};
+
+        std::vector<Points> autograd_r {autocorrelation_grad_r(displacements, pixelshift)};
+
+        std::vector<Points> autograd_2r {autocorrelation_grad_r(autograd_r, pixelshift)};
+
+        if(save_autocorrelators == true){
+            file_loader_points(autograd_r, autogradr_filename);
+        }
+
+        std::cout << "(ZSSD) Computing Autocorrelation Diagnostics..." << std::endl;
+
+        std::vector<BinnedPoint> watershed_surface_grad {
+            watershed_gradient(autograd_r, autograd_2r, displacements, pixelshift, optimalsectors, watershed_radius)
+        };
+
+        if(save_autocorrelators == true){
+            file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
+        }
+
+        double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
+
+        double peak_max {0.0};
+        double peak_var {0.0};
+
+        autocorrelation_peak_comp(autograd_r, autograd_2r, optimalsectors, pixelshift, displacements, peak_max, peak_var);
+
+        std::cout << "(ZSSD) Diagnostics: " << std::endl;
+        std::cout << " | Watershed Radius = " << watershed_radius
+                  << " | Peak Sharpness = " << auto_peaksharp
+                  << " | Autocorrelation Peak Comparison = " << peak_max
+                  << " | Autocorrelation Standard Deviation Comparison = " << peak_var << " |" << std::endl;
+
+        std::cout << "(ZSSD) Autocorrelation Workflow Finished." << std::endl;
+
     }
-    */
 
-    //Autocorrelation studies using ZNCC as a correlation function. 
-    autocorrelator_zncc(displacements, function, subpixel);
+    //---------------------------------------------------------------------------
 
-    if(save_autocorrelators == true){
-        file_loader_points(displacements, znccautocorrelator_filename);
+    //Autocorrelation using ZNCC.
+    if (zncc == true){
+
+        std::cout << "(ZNCC) Starting autocorrelation workflow using ZNCC..." << std::endl;
+
+        autocorrelator_zncc(displacements, function, subpixel);
+
+        if(save_autocorrelators == true){
+            file_loader_points(displacements, znccautocorrelator_filename);
+        }
+
+        std::cout << "(ZNCC) Generating Radial Gradients..." << std::endl;
+
+        int optimalsectors {optimal_sector_count(pixelshift, safety, fallback)};
+        double watershed_radius {0.0};
+
+        std::vector<Points> autograd_r {autocorrelation_grad_r(displacements, pixelshift)};
+
+        std::vector<Points> autograd_2r {autocorrelation_grad_r(autograd_r, pixelshift)};
+
+        if(save_autocorrelators == true){
+            file_loader_points(autograd_r, autogradr_filename);
+        }
+
+        std::cout << "(ZNCC) Computing Autocorrelation Diagnostics..." << std::endl;
+
+        std::vector<BinnedPoint> watershed_surface_grad {
+            watershed_gradient(autograd_r, autograd_2r, displacements, pixelshift, optimalsectors, watershed_radius)
+        };
+
+        if(save_autocorrelators == true){
+            file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
+        }
+
+        double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
+
+        double peak_max {0.0};
+        double peak_var {0.0};
+
+        autocorrelation_peak_comp(autograd_r, autograd_2r, optimalsectors, pixelshift, displacements, peak_max, peak_var);
+
+        std::cout << "(ZNCC) Diagnostics: " << std::endl;
+        std::cout << " | Watershed Radius = " << watershed_radius
+                  << " | Peak Sharpness = " << auto_peaksharp
+                  << " | Autocorrelation Peak Comparison = " << peak_max
+                  << " | Autocorrelation Standard Deviation Comparison = " << peak_var << " |" << std::endl;
+
+        std::cout << "(ZNCC) Autocorrelation Workflow Finished." << std::endl;
+
     }
 
-    std::cout << "Finished all autocorrelation landscape generation procedures. Generating gradients... " << std::endl;
+    //---------------------------------------------------------------------------
 
-    std::vector<Points> autograd_r {autocorrelation_grad_r(displacements, pixelshift)};
+    //Autocorrelation using ZNSSD.
+    if (znssd == true){
 
-    std::vector<Points> autograd_2r {autocorrelation_grad_r(autograd_r, pixelshift)};
+        std::cout << "(ZNSSD) Starting autocorrelation workflow using ZNSSD..." << std::endl;
 
-    if(save_autocorrelators == true){
-        file_loader_points(autograd_r, autogradr_filename);
+        autocorrelator_znssd(displacements, function, subpixel);
+
+        if(save_autocorrelators == true){
+            file_loader_points(displacements, znssdautocorrelator_filename);
+        }
+
+        std::cout << "(ZNSSD) Generating Radial Gradients..." << std::endl;
+
+        int optimalsectors {optimal_sector_count(pixelshift, safety, fallback)};
+        double watershed_radius {0.0};
+
+        std::vector<Points> autograd_r {autocorrelation_grad_r(displacements, pixelshift)};
+
+        std::vector<Points> autograd_2r {autocorrelation_grad_r(autograd_r, pixelshift)};
+
+        if(save_autocorrelators == true){
+            file_loader_points(autograd_r, autogradr_filename);
+        }
+
+        std::cout << "(ZNSSD) Computing Autocorrelation Diagnostics..." << std::endl;
+
+        std::vector<BinnedPoint> watershed_surface_grad {
+            watershed_gradient(autograd_r, autograd_2r, displacements, pixelshift, optimalsectors, watershed_radius)
+        };
+
+        if(save_autocorrelators == true){
+            file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
+        }
+
+        double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
+
+        double peak_max {0.0};
+        double peak_var {0.0};
+
+        autocorrelation_peak_comp(autograd_r, autograd_2r, optimalsectors, pixelshift, displacements, peak_max, peak_var);
+
+        std::cout << "(ZNSSD) Diagnostics: " << std::endl;
+        std::cout << " | Watershed Radius = " << watershed_radius
+                  << " | Peak Sharpness = " << auto_peaksharp
+                  << " | Autocorrelation Peak Comparison = " << peak_max
+                  << " | Autocorrelation Standard Deviation Comparison = " << peak_var << " |" << std::endl;
+
+        std::cout << "(ZNSSD) Autocorrelation Workflow Finished." << std::endl;
+
     }
 
-    std::cout << "Finished generating all autocorrelation gradients." << std::endl;
+    std::cout << "Finished all autocorrelation workflows. " << std::endl;
 
-    std::cout << "-------------" << std::endl;
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
     std::cout << "Autocorrelation finished, moving to diagnostics." << std::endl;
-    std::cout << "-------------" << std::endl;
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
+
+    //---------------------------------------------------------------------------
 
     //Generate the MIG (mean intensity gradient).
-    double MIG {mig(grad_Mag)};    
+    double MIG {mig(grad_Mag)};
 
-    std::cout << "Single Valued Diagnostics: " << "MIG = " << MIG << " | Shannon Entropy = " << sentropy << std::endl;
+    std::cout << "Single Valued Diagnostics: " << std::endl;
+    std::cout << " | MIG = " << MIG << " | Shannon Entropy = " << sentropy << " |" << std::endl;
 
-    int optimalsectors {optimal_sector_count(pixelshift, safety, fallback)};
-    double watershed_radius {0.0};
-
-    std::vector<BinnedPoint> watershed_surface_grad {
-        watershed_gradient(autograd_r, autograd_2r, displacements, pixelshift, optimalsectors, watershed_radius)
-    };
-
-    double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
-
-    double peak_max {0.0};
-    double peak_var {0.0};
-
-    autocorrelation_peak_comp(autograd_r, autograd_2r, optimalsectors, pixelshift, displacements, peak_max, peak_var);
-
-    std::cout << "Finished Autocorrelation Diagnostic Calculations using Gradients | " << "Watershed Radius = " << watershed_radius 
-    << " | Peak Sharpness = " << auto_peaksharp << std::endl;
-    std::cout << " | Autocorrelation Peak Comparison = " << peak_max << " | Autocorrelation Standard Deviation Comparison = " << peak_var << std::endl;
-
-    file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
-    
     std::vector<Points> sssig_heatmap {
         sssig_heatmap_generator(ss_size, st_size, grad_Mag, subpixel, width, height)
     };
@@ -248,13 +528,15 @@ int main(){
     std::cout << "Finished SSSIG Related Diagnostics: " << std::endl;
     std::cout << " | Delta Map Mean = " << deltamap_mean << " | Delta Map Standard Deviation = " << deltamap_std << std::endl;
 
+    //---------------------------------------------------------------------------
+
     //End benchmarking timer
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> duration_ms = end - start;
 
-    std::cout << "-------------" << std::endl;
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
     std::cout << "PROGRAM FINISHED." << std::endl;
-    std::cout << "-------------" << std::endl;
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
 
     std::cout << "Program finished analyzing and generating a "<< ((width * height) / 1000000) << "MPx image in: " << duration_ms.count()/1000 << "s" << std::endl;
     
