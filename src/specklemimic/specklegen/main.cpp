@@ -32,11 +32,13 @@ int main(){
     std::string speckle_filename {"output/speckles.csv"}; //Specify speckle filename output.
     double subpixel {0.5}; //Specify what fraction of pixel you want to resolve.
     double ratio {0.7}; //Black to white ratio
-    double nbins {20}; //How many bins are needed for speckle intensity statistics.
+    int nbins {20}; //How many bins are needed for speckle intensity statistics.
     int pixelshift {20}; //How many autocorrelation shifts.
     bool save_speckle {true};
     bool save_grads {true};
     bool save_autocorrelators {true};
+    int ss_size {20}; //Subset Size for SSSIG Heatmap Calculations.
+    int st_size {20}; //Step Size for SSIG Heatmap Calculations.
 
     //CONSOLE OUTPUTS TO START CODE
     std::cout << "-------------" << std::endl;
@@ -59,6 +61,8 @@ int main(){
     std::string znccautocorrelator_filename {"output/zncc_autocorrelator.csv"};
     std::string autogradr_filename {"output/autogradr.csv"};
     std::string watershedgrad_filename {"output/wshedgrad.csv"}; 
+    std::string sssig_filename {"output/sssig_heatmap.csv"};
+    std::string sssigdelta_filename {"output/sssig_deltamap.csv"};
 
     //VALUES FOR DIAGNOSTICS
     double safety {1.25}; //Safety factor for binning in watershed radius calculations. 
@@ -223,9 +227,26 @@ int main(){
 
     std::cout << "Finished Autocorrelation Diagnostic Calculations using Gradients | " << "Watershed Radius = " << watershed_radius 
     << " | Peak Sharpness = " << auto_peaksharp << std::endl;
-    std::cout << " | Autocorrelation Peak Comparison = " << peak_max << " | Autocorrelation Standard Deviation Comparison" << peak_var << std::endl;
+    std::cout << " | Autocorrelation Peak Comparison = " << peak_max << " | Autocorrelation Standard Deviation Comparison = " << peak_var << std::endl;
 
     file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
+    
+    std::vector<Points> sssig_heatmap {
+        sssig_heatmap_generator(ss_size, st_size, grad_Mag, subpixel, width, height)
+    };
+
+    file_loader_points(sssig_heatmap, sssig_filename);
+
+    double deltamap_mean {0.0};
+    double deltamap_std {0.0};
+    std::vector<Points> sssig_deltamap = sssig_heatmap;
+
+    sssig_deltamap_generator(sssig_deltamap, deltamap_mean, deltamap_std, MIG);
+
+    file_loader_points(sssig_deltamap, sssigdelta_filename);
+
+    std::cout << "Finished SSSIG Related Diagnostics: " << std::endl;
+    std::cout << " | Delta Map Mean = " << deltamap_mean << " | Delta Map Standard Deviation = " << deltamap_std << std::endl;
 
     //End benchmarking timer
     auto end = std::chrono::high_resolution_clock::now();
