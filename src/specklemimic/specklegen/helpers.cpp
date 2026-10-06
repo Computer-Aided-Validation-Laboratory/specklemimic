@@ -5,7 +5,12 @@
 #include <vector>
 #include "structures.hpp"
 
-int speckle_numbers(const double width, const double height, const double size, double ratio){
+int speckle_numbers(
+    const double width, 
+    const double height, 
+    const double size, 
+    double ratio)
+{
 
     //Calculate areas and then divide them to get output. 
     double area{width * height};
@@ -17,7 +22,10 @@ int speckle_numbers(const double width, const double height, const double size, 
     
 }
 
-void file_loader(const std::vector<Function>& points, const std::string filename){
+void file_loader(
+    const std::vector<Function>& points, 
+    const std::string filename)
+{
 
     std::ofstream file(filename);
 
@@ -30,7 +38,10 @@ void file_loader(const std::vector<Function>& points, const std::string filename
     std::cout << "Saved file to: " << filename << std::endl;
 }
 
-void gradient_x(const std::vector<Function>& function, std::vector<Function>& grad_x){
+void gradient_x(
+    const std::vector<Function>& function, 
+    std::vector<Function>& grad_x)
+{
 
     //Define some helper variables.
     int nx = function[0].nx;
@@ -68,7 +79,10 @@ void gradient_x(const std::vector<Function>& function, std::vector<Function>& gr
 
 }
 
-void gradient_y(const std::vector<Function>& function, std::vector<Function>& grad_y){
+void gradient_y(
+    const std::vector<Function>& function, 
+    std::vector<Function>& grad_y)
+{
 
     //Define some helper variables. 
     int nx = function[0].nx;
@@ -106,7 +120,11 @@ void gradient_y(const std::vector<Function>& function, std::vector<Function>& gr
 
 }
 
-void gradient_mag(const std::vector<Function>& grad_x, const std::vector<Function>& grad_y, std::vector<Function>& grad_mag){
+void gradient_mag(
+    const std::vector<Function>& grad_x, 
+    const std::vector<Function>& grad_y, 
+    std::vector<Function>& grad_mag)
+{
 
     //Define some helper variables.
     int nx = grad_x[0].nx;
@@ -157,7 +175,10 @@ std::vector<Points> displacement_generator(const int pixelshift){
 
 }
 
-void file_loader_points(const std::vector<Points>& points, const std::string filename){
+void file_loader_points(
+    const std::vector<Points>& points, 
+    const std::string filename)
+{
    
     std::ofstream file(filename);
 
@@ -171,7 +192,11 @@ void file_loader_points(const std::vector<Points>& points, const std::string fil
 
 }
 
-int optimal_sector_count(const int pixelshift, const double safety, const int fallback){
+int optimal_sector_count(
+    const int pixelshift, 
+    const double safety, 
+    const int fallback)
+{
 
     int sectors {static_cast<int>(std::ceil(2.0 * std::numbers::pi * pixelshift * safety))};
 
@@ -179,7 +204,10 @@ int optimal_sector_count(const int pixelshift, const double safety, const int fa
 
 }
 
-void file_loader_binned_points(const std::vector<BinnedPoint>& points, const std::string filename){
+void file_loader_binned_points(
+    const std::vector<BinnedPoint>& points, 
+    const std::string filename)
+{
    
     std::ofstream file(filename);
 

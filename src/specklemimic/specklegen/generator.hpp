@@ -27,7 +27,11 @@
  * @param size Radius of the speckle. 
  * @return std::vector<Points> Generated seed points in the points structure.
  */
-std::vector<Points> generate_speckles_random(const double width, const double height, const int count, const double size);
+std::vector<Points> generate_speckles_random(
+    const double width, 
+    const double height, 
+    const int count, 
+    const double size);
 
 
 /**
@@ -40,7 +44,10 @@ std::vector<Points> generate_speckles_random(const double width, const double he
  * @param subpixel Subpixel resolution we are going till.
  * @return std::vector<Function> Background generated function vector.
  */
-std::vector<Function> background_generator(const double width, const double height, const double subpixel);
+std::vector<Function> background_generator(
+    const double width, 
+    const double height, 
+    const double subpixel);
 
 
 /**
@@ -51,4 +58,6 @@ std::vector<Function> background_generator(const double width, const double heig
  * @param background Background generated function vector.
  * @param seeds Seed points for the speckle pattern.
  */
-void speckle_filler(std::vector<Function>& background, const std::vector<Points>& seeds);
+void speckle_filler(
+    std::vector<Function>& background, 
+    const std::vector<Points>& seeds);

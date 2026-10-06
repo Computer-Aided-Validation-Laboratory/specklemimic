@@ -28,7 +28,11 @@
  * @param ratio Target coverage ratio of the ROI.
  * @return int Number of speckles required.
  */
-int speckle_numbers(const double width, const double height, const double size, double ratio);
+int speckle_numbers(
+    const double width, 
+    const double height, 
+    const double size, 
+    double ratio);
 
 
 /**
@@ -39,7 +43,9 @@ int speckle_numbers(const double width, const double height, const double size, 
  * @param points Function vector to be saved.
  * @param filename Name of the output file.
  */
-void file_loader(const std::vector<Function>& points, const std::string filename);
+void file_loader(
+    const std::vector<Function>& points, 
+    const std::string filename);
 
 
 /**
@@ -50,7 +56,9 @@ void file_loader(const std::vector<Function>& points, const std::string filename
  * @param function Function vector to differentiate.
  * @param grad_x Gradient of the function in x.
  */
-void gradient_x(const std::vector<Function>& function, std::vector<Function>& grad_x);
+void gradient_x(
+    const std::vector<Function>& function, 
+    std::vector<Function>& grad_x);
 
 
 /**
@@ -61,7 +69,9 @@ void gradient_x(const std::vector<Function>& function, std::vector<Function>& gr
  * @param function Function vector to differentiate.
  * @param grad_y Gradient of the function in y.
  */
-void gradient_y(const std::vector<Function>& function, std::vector<Function>& grad_y);
+void gradient_y(
+    const std::vector<Function>& function, 
+    std::vector<Function>& grad_y);
 
 
 /**
@@ -73,7 +83,10 @@ void gradient_y(const std::vector<Function>& function, std::vector<Function>& gr
  * @param grad_y Gradient of the function in y.
  * @param grad_mag Magnitude of the gradient.
  */
-void gradient_mag(const std::vector<Function>& grad_x, const std::vector<Function>& grad_y, std::vector<Function>& grad_mag);
+void gradient_mag(
+    const std::vector<Function>& grad_x, 
+    const std::vector<Function>& grad_y, 
+    std::vector<Function>& grad_mag);
 
 
 /**
@@ -95,7 +108,9 @@ std::vector<Points> displacement_generator(const int pixelshift);
  * @param points Points vector to be saved.
  * @param filename Name of the output file.
  */
-void file_loader_points(const std::vector<Points>& points, const std::string filename);
+void file_loader_points(
+    const std::vector<Points>& points, 
+    const std::string filename);
 
 
 /**
@@ -108,7 +123,10 @@ void file_loader_points(const std::vector<Points>& points, const std::string fil
  * @param fallback The number of bins should not go below this fallback to keep things reasonable.
  * @return int The number of sectors needed by the autocorrelation diagnostic.
  */
-int optimal_sector_count(const int pixelshift, const double safety, const int fallback);
+int optimal_sector_count(
+    const int pixelshift, 
+    const double safety, 
+    const int fallback);
 
 
 /**
@@ -119,4 +137,6 @@ int optimal_sector_count(const int pixelshift, const double safety, const int fa
  * @param points Binned point vector to be saved.
  * @param filename Name of the output file.
  */
-void file_loader_binned_points(const std::vector<BinnedPoint>& points, const std::string filename);
+void file_loader_binned_points(
+    const std::vector<BinnedPoint>& points, 
+    const std::string filename);

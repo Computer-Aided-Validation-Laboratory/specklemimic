@@ -215,8 +215,14 @@ int main(){
 
     double auto_peaksharp {autocorrelation_peak(autograd_r, pixelshift)};
 
+    double peak_max {0.0};
+    double peak_var {0.0};
+
+    autocorrelation_peak_comp(autograd_r, autograd_2r, optimalsectors, pixelshift, displacements, peak_max, peak_var);
+
     std::cout << "Finished Autocorrelation Diagnostic Calculations using Gradients | " << "Watershed Radius = " << watershed_radius 
     << " | Peak Sharpness = " << auto_peaksharp << std::endl;
+    std::cout << " | Autocorrelation Peak Comparison = " << peak_max << " | Autocorrelation Standard Deviation Comparison" << peak_var << std::endl;
 
     file_loader_binned_points(watershed_surface_grad, watershedgrad_filename);
 
