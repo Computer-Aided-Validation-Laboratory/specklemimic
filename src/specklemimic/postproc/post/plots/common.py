@@ -8,6 +8,7 @@ import numpy as np
 from matplotlib import patheffects
 from matplotlib.colors import to_rgb
 from matplotlib.figure import Figure
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from post.console import log_error, log_info, log_warning
 from post.constants import DEFAULT_DPI
@@ -81,7 +82,9 @@ def add_heatmap(ax, grid: Grid, cmap: str, title: str, xlabel: str, ylabel: str,
     ax.set_aspect("equal")
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    colourbar = ax.figure.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
+    
+    cax = make_axes_locatable(ax).append_axes("right", size="4.5%", pad=0.1)
+    colourbar = ax.figure.colorbar(image, cax=cax)
     colourbar.set_label(cbar_label)
     return image
 
