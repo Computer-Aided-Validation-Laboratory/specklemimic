@@ -20,12 +20,13 @@ The repository is structured to maintain a clear and accessible workflow for the
 ### Focus 1: Speckle Quality Metrics & Statistics
 **Priority Reading:**
 * Su, Yong, Qingchuan Zhang, and Zeren Gao. “Statistical Model for Speckle Pattern Optimization.” Optics Express 25, no. 24 (2017): 30259–75. [[DOI](https://doi.org/10.1364/OE.25.030259.)]
-> *Note: This paper should tell me a decent bit about speckle statistics such as speckle size, distribution, power spectra etc.*
+> *Note: This paper should tell me a decent bit about speckle statistics such as speckle size, distribution, power spectra etc. (Focus 2 is priority)*
 
 ### Focus 2: Procedural Reconstruction Techniques
 **Background Reading:**
-* Brunton, S. L. (2026). *Optimization: A Bootcamp for Machine Learning, Inverse Problems, and Control.* Cambridge University Press. [[DOI](https://doi.org/10.1017/9781009755856)]
-> *Note: Temporarily on the backburner until Focus 1 is thoroughly understood.*
+* Bonyadi, Mohammad Reza, and Zbigniew Michalewicz. “Particle Swarm Optimization for Single Objective Continuous Space Problems: A Review.” Evolutionary Computation 25, no. 1 (2017): 1–54.
+ [[DOI](https://doi.org/10.1162/EVCO_r_00180)]
+> *Note: Current Priority*
 
 ### Coding: Learning some C++
 **FCC Course on C++**
