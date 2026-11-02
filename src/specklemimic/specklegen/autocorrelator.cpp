@@ -6,9 +6,33 @@
 #include <algorithm>
 #include <numbers>
 
+//Value of the displaced function at point (i, j). The displaced grid is never built: the value is read straight from the original field.
+//Where the displaced point falls outside the grid the value is 0.
+static inline double shifted_value(
+    const Field& function,
+    const int i,
+    const int j,
+    const double u,
+    const double v)
+{
+
+    const int nx = function.grid.nx;
+    const int ny = function.grid.ny;
+
+    if (i - u >= 0 && i - u < nx && j - v >= 0 && j - v < ny){
+        //Mappin from the old function to the new function.
+        int shifted_index = (i - u) * ny + (j - v);
+        return function.f[shifted_index];
+    }
+
+    //Adding a default 0 value.
+    return 0.0;
+
+}
+
 void autocorrelator_ssd(
-    std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    std::vector<Points>& displacements,
+    const Field& function,
     const double subpixel)
 {
 
@@ -18,13 +42,13 @@ void autocorrelator_ssd(
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    //Define some helper variables. 
+    //Define some helper variables.
 
-    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE. 
-    int nx = function[0].nx;
-    int ny = function[0].ny;
+    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE.
+    int nx = function.grid.nx;
+    int ny = function.grid.ny;
 
-    //Loop over displacements. 
+    //Loop over displacements.
     for (auto& displacement: displacements){
 
         //More helper variables for convenience.
@@ -32,34 +56,21 @@ void autocorrelator_ssd(
         double v = displacement.y/subpixel;
         displacement.r = 0.0;
 
-        //Initialize shifted function. 
-        std::vector<Function> shifted_function = function;
-
         for (int i = 0; i < nx; i++){
             for (int j = 0; j < ny; j++){
 
                 int index = i * ny + j;
 
-                //Mappin from the old function to the new function. 
-                int shifted_index = (i - u) * ny + (j - v);
-
-                if (i - u >= 0 && i - u < nx && j - v >= 0 && j - v < ny){
-                    //Shifting function properly
-                    shifted_function[index].f = function[shifted_index].f;
-                }
-                else{
-                    //Adding a default 0 value.
-                    shifted_function[index].f = 0.0;
-                }
+                double shifted = shifted_value(function, i, j, u, v);
 
                 //Computing the SSD value.
-                displacement.r += ((function[index].f - shifted_function[index].f) * (function[index].f - shifted_function[index].f));
+                displacement.r += ((function.f[index] - shifted) * (function.f[index] - shifted));
 
             }
         }
 
         //Normalize the correlated value.
-        displacement.r /= function.size();
+        displacement.r /= function.f.size();
         displacement.r = (1 - displacement.r);
 
     }
@@ -72,8 +83,8 @@ void autocorrelator_ssd(
 }
 
 void autocorrelator_scc(
-    std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    std::vector<Points>& displacements,
+    const Field& function,
     const double subpixel)
 {
 
@@ -83,17 +94,17 @@ void autocorrelator_scc(
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    //Define some helper variables. 
-    int nx = function[0].nx;
-    int ny = function[0].ny;
+    //Define some helper variables.
+    int nx = function.grid.nx;
+    int ny = function.grid.ny;
 
-    //Compute square sum for normalization. 
+    //Compute square sum for normalization.
     double f_squared_sum = 0.0;
-    for (const auto& pt : function) {
-        f_squared_sum += pt.f * pt.f;
+    for (const double value : function.f) {
+        f_squared_sum += value * value;
     }
 
-    //Loop over displacements. 
+    //Loop over displacements.
     for (auto& displacement: displacements){
 
         //More helper variables for convenience.
@@ -101,28 +112,15 @@ void autocorrelator_scc(
         double v = displacement.y/subpixel;
         displacement.r = 0.0;
 
-        //Initialize shifted function. 
-        std::vector<Function> shifted_function = function;
-
         for (int i = 0; i < nx; i++){
             for (int j = 0; j < ny; j++){
 
                 int index = i * ny + j;
 
-                //Mappin from the old function to the new function. 
-                int shifted_index = (i - u) * ny + (j - v);
-
-                if (i - u >= 0 && i - u < nx && j - v >= 0 && j - v < ny){
-                    //Shifting function properly
-                    shifted_function[index].f = function[shifted_index].f;
-                }
-                else{
-                    //Adding a default 0 value.
-                    shifted_function[index].f = 0.0;
-                }
+                double shifted = shifted_value(function, i, j, u, v);
 
                 //Computing the SSD value.
-                displacement.r += function[index].f * shifted_function[index].f;
+                displacement.r += function.f[index] * shifted;
 
             }
         }
@@ -140,8 +138,8 @@ void autocorrelator_scc(
 }
 
 void autocorrelator_nssd(
-    std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    std::vector<Points>& displacements,
+    const Field& function,
     const double subpixel)
 {
 
@@ -151,13 +149,13 @@ void autocorrelator_nssd(
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    //Define some helper variables. 
+    //Define some helper variables.
 
-    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE. 
-    int nx = function[0].nx;
-    int ny = function[0].ny;
+    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE.
+    int nx = function.grid.nx;
+    int ny = function.grid.ny;
 
-    //Loop over displacements again to get the actual correlation. 
+    //Loop over displacements again to get the actual correlation.
     for (auto& displacement: displacements){
 
         //More helper variables for convenience.
@@ -169,30 +167,17 @@ void autocorrelator_nssd(
         double f_m {0};
         double g_m {0};
 
-        //Initialize shifted function. 
-        std::vector<Function> shifted_function = function;
-
-        //Compute some norms for NSSD and construct the shifted function. 
+        //Compute some norms for NSSD.
         for (int i = 0; i < nx; i++){
             for (int j = 0; j < ny; j++){
 
                 int index = i * ny + j;
 
-                //Mappin from the old function to the new function. 
-                int shifted_index = (i - u) * ny + (j - v);
-
-                if (i - u >= 0 && i - u < nx && j - v >= 0 && j - v < ny){
-                    //Shifting function properly
-                    shifted_function[index].f = function[shifted_index].f;
-                }
-                else{
-                    //Adding a default 0 value.
-                    shifted_function[index].f = 0.0;
-                }
+                double shifted = shifted_value(function, i, j, u, v);
 
                 //Computing the SSD value.
-                f_m += function[index].f * function[index].f;
-                g_m += shifted_function[index].f * shifted_function[index].f;
+                f_m += function.f[index] * function.f[index];
+                g_m += shifted * shifted;
 
             }
         }
@@ -206,9 +191,11 @@ void autocorrelator_nssd(
 
                 int index = i * ny + j;
 
+                double shifted = shifted_value(function, i, j, u, v);
+
                 //Computing the NSSD value.
-                displacement.r += (((function[index].f / f_m) - (shifted_function[index].f / g_m)) 
-                * ((function[index].f / f_m) - (shifted_function[index].f / g_m)));
+                displacement.r += (((function.f[index] / f_m) - (shifted / g_m))
+                * ((function.f[index] / f_m) - (shifted / g_m)));
 
             }
         }
@@ -226,8 +213,8 @@ void autocorrelator_nssd(
 }
 
 void autocorrelator_zssd(
-    std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    std::vector<Points>& displacements,
+    const Field& function,
     const double subpixel)
 {
 
@@ -237,13 +224,13 @@ void autocorrelator_zssd(
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    //Define some helper variables. 
+    //Define some helper variables.
 
-    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE. 
-    int nx = function[0].nx;
-    int ny = function[0].ny;
+    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE.
+    int nx = function.grid.nx;
+    int ny = function.grid.ny;
 
-    //Loop over displacements again to get the actual correlation. 
+    //Loop over displacements again to get the actual correlation.
     for (auto& displacement: displacements){
 
         //More helper variables for convenience.
@@ -255,52 +242,41 @@ void autocorrelator_zssd(
         double f_m {0};
         double g_m {0};
 
-        //Initialize shifted function. 
-        std::vector<Function> shifted_function = function;
-
-        //Compute some norms for NSSD and construct the shifted function. 
+        //Compute the means.
         for (int i = 0; i < nx; i++){
             for (int j = 0; j < ny; j++){
 
                 int index = i * ny + j;
 
-                //Mappin from the old function to the new function. 
-                int shifted_index = (i - u) * ny + (j - v);
-
-                if (i - u >= 0 && i - u < nx && j - v >= 0 && j - v < ny){
-                    //Shifting function properly
-                    shifted_function[index].f = function[shifted_index].f;
-                }
-                else{
-                    //Adding a default 0 value.
-                    shifted_function[index].f = 0.0;
-                }
+                double shifted = shifted_value(function, i, j, u, v);
 
                 //Computing the SSD value.
-                f_m += function[index].f;
-                g_m += shifted_function[index].f;
+                f_m += function.f[index];
+                g_m += shifted;
 
             }
         }
 
         //Normalize the correlated value.
-        f_m /= function.size();
-        g_m /= function.size();
+        f_m /= function.f.size();
+        g_m /= function.f.size();
 
         for (int i = 0; i < nx; i++){
             for (int j = 0; j < ny; j++){
 
                 int index = i * ny + j;
 
+                double shifted = shifted_value(function, i, j, u, v);
+
                 //Computing the ZSSD value.
-                displacement.r += ((function[index].f - f_m) - (shifted_function[index].f - g_m))
-                 * ((function[index].f - f_m) - (shifted_function[index].f - g_m));
+                displacement.r += ((function.f[index] - f_m) - (shifted - g_m))
+                 * ((function.f[index] - f_m) - (shifted - g_m));
 
             }
         }
 
-        //Invert and normalize the correlation function. 
-        displacement.r /= function.size();
+        //Invert and normalize the correlation function.
+        displacement.r /= function.f.size();
         displacement.r = (1 - (displacement.r));
 
     }
@@ -313,8 +289,8 @@ void autocorrelator_zssd(
 }
 
 void autocorrelator_znssd(
-    std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    std::vector<Points>& displacements,
+    const Field& function,
     const double subpixel)
 {
 
@@ -324,13 +300,13 @@ void autocorrelator_znssd(
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    //Define some helper variables. 
+    //Define some helper variables.
 
-    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE. 
-    int nx = function[0].nx;
-    int ny = function[0].ny;
+    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE.
+    int nx = function.grid.nx;
+    int ny = function.grid.ny;
 
-    //Loop over displacements again to get the actual correlation. 
+    //Loop over displacements again to get the actual correlation.
     for (auto& displacement: displacements){
 
         //More helper variables for convenience.
@@ -342,55 +318,44 @@ void autocorrelator_znssd(
         double f_m {0};
         double g_m {0};
 
-        //To compute the zero mean normalization. 
+        //To compute the zero mean normalization.
         double delta_f {0};
         double delta_g {0};
 
-        //Initialize shifted function. 
-        std::vector<Function> shifted_function = function;
-
-        //Compute some norms for NSSD and construct the shifted function. 
+        //Compute the means.
         for (int i = 0; i < nx; i++){
             for (int j = 0; j < ny; j++){
 
                 int index = i * ny + j;
 
-                //Mappin from the old function to the new function. 
-                int shifted_index = (i - u) * ny + (j - v);
-
-                if (i - u >= 0 && i - u < nx && j - v >= 0 && j - v < ny){
-                    //Shifting function properly
-                    shifted_function[index].f = function[shifted_index].f;
-                }
-                else{
-                    //Adding a default 0 value.
-                    shifted_function[index].f = 0.0;
-                }
+                double shifted = shifted_value(function, i, j, u, v);
 
                 //Computing the SSD value.
-                f_m += function[index].f;
-                g_m += shifted_function[index].f;
+                f_m += function.f[index];
+                g_m += shifted;
 
             }
         }
 
         //Normalize the correlated value.
-        f_m /= function.size();
-        g_m /= function.size();
+        f_m /= function.f.size();
+        g_m /= function.f.size();
 
         for (int i = 0; i < nx; i++){
             for (int j = 0; j < ny; j++){
 
                 int index = i * ny + j;
 
+                double shifted = shifted_value(function, i, j, u, v);
+
                 //Computing the deltas
-                delta_f += (function[index].f - f_m) * (function[index].f - f_m);
-                delta_g += (shifted_function[index].f - g_m) * (shifted_function[index].f - g_m);
+                delta_f += (function.f[index] - f_m) * (function.f[index] - f_m);
+                delta_g += (shifted - g_m) * (shifted - g_m);
 
             }
         }
 
-        //Normalize the deltas. 
+        //Normalize the deltas.
         delta_f = std::sqrt(delta_f);
         delta_g = std::sqrt(delta_g);
 
@@ -400,9 +365,11 @@ void autocorrelator_znssd(
 
                 int index = i * ny + j;
 
+                double shifted = shifted_value(function, i, j, u, v);
+
                 //Computing the ZNSSD value.
-                displacement.r += (((function[index].f - f_m) / delta_f) - ((shifted_function[index].f - g_m) / delta_g)) * 
-                (((function[index].f - f_m) / delta_f) - ((shifted_function[index].f - g_m) / delta_g));
+                displacement.r += (((function.f[index] - f_m) / delta_f) - ((shifted - g_m) / delta_g)) *
+                (((function.f[index] - f_m) / delta_f) - ((shifted - g_m) / delta_g));
 
             }
         }
@@ -420,8 +387,8 @@ void autocorrelator_znssd(
 }
 
 void autocorrelator_zncc(
-    std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    std::vector<Points>& displacements,
+    const Field& function,
     const double subpixel)
 {
 
@@ -431,17 +398,11 @@ void autocorrelator_zncc(
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    //Define some helper variables. 
-    int nx = function[0].nx;
-    int ny = function[0].ny;
+    //Define some helper variables.
+    int nx = function.grid.nx;
+    int ny = function.grid.ny;
 
-    //Compute square sum for normalization. 
-    double f_squared_sum = 0.0;
-    for (const auto& pt : function) {
-        f_squared_sum += pt.f * pt.f;
-    }
-
-    //Loop over displacements again to get the actual correlation. 
+    //Loop over displacements again to get the actual correlation.
     for (auto& displacement: displacements){
 
         //More helper variables for convenience.
@@ -453,55 +414,44 @@ void autocorrelator_zncc(
         double f_m {0};
         double g_m {0};
 
-        //To compute the zero mean normalization. 
+        //To compute the zero mean normalization.
         double delta_f {0};
         double delta_g {0};
 
-        //Initialize shifted function. 
-        std::vector<Function> shifted_function = function;
-
-        //Compute some norms for NSSD and construct the shifted function. 
+        //Compute the means.
         for (int i = 0; i < nx; i++){
             for (int j = 0; j < ny; j++){
 
                 int index = i * ny + j;
 
-                //Mappin from the old function to the new function. 
-                int shifted_index = (i - u) * ny + (j - v);
-
-                if (i - u >= 0 && i - u < nx && j - v >= 0 && j - v < ny){
-                    //Shifting function properly
-                    shifted_function[index].f = function[shifted_index].f;
-                }
-                else{
-                    //Adding a default 0 value.
-                    shifted_function[index].f = 0.0;
-                }
+                double shifted = shifted_value(function, i, j, u, v);
 
                 //Computing the SSD value.
-                f_m += function[index].f;
-                g_m += shifted_function[index].f;
+                f_m += function.f[index];
+                g_m += shifted;
 
             }
         }
 
         //Normalize the correlated value.
-        f_m /= function.size();
-        g_m /= function.size();
+        f_m /= function.f.size();
+        g_m /= function.f.size();
 
         for (int i = 0; i < nx; i++){
             for (int j = 0; j < ny; j++){
 
                 int index = i * ny + j;
 
+                double shifted = shifted_value(function, i, j, u, v);
+
                 //Computing the deltas
-                delta_f += (function[index].f - f_m) * (function[index].f - f_m);
-                delta_g += (shifted_function[index].f - g_m) * (shifted_function[index].f - g_m);
+                delta_f += (function.f[index] - f_m) * (function.f[index] - f_m);
+                delta_g += (shifted - g_m) * (shifted - g_m);
 
             }
         }
 
-        //Normalize the deltas. 
+        //Normalize the deltas.
         delta_f = std::sqrt(delta_f);
         delta_g = std::sqrt(delta_g);
 
@@ -511,8 +461,10 @@ void autocorrelator_zncc(
 
                 int index = i * ny + j;
 
+                double shifted = shifted_value(function, i, j, u, v);
+
                 //Computing the ZNCC value.
-                displacement.r += ((function[index].f - f_m) * (shifted_function[index].f - g_m)) / (delta_f * delta_g);
+                displacement.r += ((function.f[index] - f_m) * (shifted - g_m)) / (delta_f * delta_g);
 
             }
         }

@@ -81,11 +81,8 @@ struct LossSettings {
 struct LossContext {
     LossSettings settings;
     HaltonTable halton;                     //Seed points, computed once (see generator.hpp), read only and shared by all threads.
-    GridInfo grid;                          //Layout of the grid, stored once.
-    std::vector<double> truth_f;            //Ground truth gray values only, index = i * ny + j. Read only and shared by all threads.
+    Field ground_truth;                     //Ground truth pattern: the grid (stored once) and the gray values. Read only and shared by all threads.
     double truth_norm {0.0};                //Sum of the squared ground truth gray values, summed in grid order.
-    std::vector<Function> background;       //Empty grid, copied for every evaluation.
-    std::vector<Function> ground_truth;     //Ground truth pattern.
     std::vector<Points> truth_sssig;        //Ground truth SSSIG heatmap (empty if not needed).
     std::vector<Points> truth_autocorr;     //Ground truth ZNSSD map (empty if not needed).
     AutocorrScalars truth_scalars;          //Ground truth autocorrelation scalars.
@@ -122,7 +119,7 @@ bool needs_autocorrelation(LossType type);
  * @return LossContext Context passed to every parameter loss.
  */
 LossContext build_loss_context(
-    const std::vector<Function>& ground_truth,
+    const Field& ground_truth,
     const LossSettings& settings,
     const bool need_sssig,
     const bool need_autocorr);
@@ -135,16 +132,37 @@ LossContext build_loss_context(
  *
  * @param speckleSize Speckle size (diameter in px).
  * @param ratio Black to white ratio.
- * @param background Empty background. Passed by value so it is filled as a copy.
+ * @param grid Grid of the ROI.
  * @param width Width of the ROI. (x)
  * @param height Height of the ROI. (y)
  * @param table Stored Halton points to reuse. If null, or for any point beyond the table, the point is computed. The pattern is identical either way.
- * @return std::vector<Function> Filled speckle pattern.
+ * @return Field Filled speckle pattern.
  */
-std::vector<Function> generate_pattern(
+Field generate_pattern(
     const double speckleSize,
     const double ratio,
-    std::vector<Function> background,
+    const GridInfo& grid,
+    const double width,
+    const double height,
+    const HaltonTable* table = nullptr);
+
+
+/**
+ * @brief Pattern Generator into an existing field
+ *
+ * Same as generate_pattern, but clears and fills a field that already exists, so the memory can be reused for the next pattern.
+ *
+ * @param pattern Field to fill. Its grid has to be set, its values are cleared first.
+ * @param speckleSize Speckle size (diameter in px).
+ * @param ratio Black to white ratio.
+ * @param width Width of the ROI. (x)
+ * @param height Height of the ROI. (y)
+ * @param table Stored Halton points to reuse, see generate_pattern.
+ */
+void generate_pattern_into(
+    Field& pattern,
+    const double speckleSize,
+    const double ratio,
     const double width,
     const double height,
     const HaltonTable* table = nullptr);
@@ -160,7 +178,22 @@ std::vector<Function> generate_pattern(
  * @return std::vector<Points> SSSIG heatmap.
  */
 std::vector<Points> compute_sssig(
-    const std::vector<Function>& pattern,
+    const Field& pattern,
+    const LossSettings& settings);
+
+
+/**
+ * @brief SSSIG Heatmap of a Pattern, consuming the pattern
+ *
+ * Same result as compute_sssig, but the gradient magnitude is computed in place over the pattern (no copy, no gradient fields).
+ * The pattern is destroyed: afterwards it holds the gradient magnitude.
+ *
+ * @param pattern Speckle pattern. Overwritten.
+ * @param settings Fixed loss settings.
+ * @return std::vector<Points> SSSIG heatmap.
+ */
+std::vector<Points> compute_sssig_consume(
+    Field& pattern,
     const LossSettings& settings);
 
 
@@ -172,7 +205,7 @@ std::vector<Points> compute_sssig(
  * @return std::vector<Points> Autocorrelation map over (2 * pixelshift + 1)^2 displacements.
  */
 std::vector<Points> compute_autocorrelation(
-    const std::vector<Function>& pattern,
+    const Field& pattern,
     const LossSettings& settings);
 
 
@@ -200,8 +233,8 @@ AutocorrScalars compute_autocorr_scalars(
  * @return double Relative mean squared error.
  */
 double graylevel_mse(
-    const std::vector<Function>& ground_truth,
-    const std::vector<Function>& candidate);
+    const Field& ground_truth,
+    const Field& candidate);
 
 
 /**
@@ -264,8 +297,8 @@ double graylevelmse_seeds(
     const double* x,
     size_t d,
     const double r,
-    const std::vector<Function>& ground_truth,
-    std::vector<Function> background,
+    const Field& ground_truth,
+    Field background,
     const double subpixel,
     const size_t n);
 
@@ -282,9 +315,9 @@ double graylevelmse_seeds(
  * @param n Number of speckles.
  * @param d Number of dimensions (2 * n).
  * @param r Radius of every speckle.
- * @return std::vector<Function> Reconstructed pattern.
+ * @return Field Reconstructed pattern.
  */
-std::vector<Function> patternreconstructor_seeds(
+Field patternreconstructor_seeds(
     const PSOResult& result,
     const int width,
     const int height,
@@ -323,9 +356,9 @@ double params_loss(
  * @param width Width of the ROI. (x)
  * @param height Height of the ROI. (y)
  * @param subpixel Subpixel resolution.
- * @return std::vector<Function> Reconstructed pattern.
+ * @return Field Reconstructed pattern.
  */
-std::vector<Function> patternreconstructor_params(
+Field patternreconstructor_params(
     const PSOResult& result,
     const double width,
     const double height,

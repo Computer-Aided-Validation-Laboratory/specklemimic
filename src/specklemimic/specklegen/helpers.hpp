@@ -36,57 +36,70 @@ int speckle_numbers(
 
 
 /**
- * @brief Function File Loader
- * 
- * Writes the x, y and f values of a function vector to a csv file. 
- * 
- * @param points Function vector to be saved.
+ * @brief Field File Loader
+ *
+ * Writes the x, y and f values of a field to a csv file. The positions are computed from the grid.
+ *
+ * @param points Field to be saved.
  * @param filename Name of the output file.
  */
 void file_loader(
-    const std::vector<Function>& points, 
+    const Field& points,
     const std::string filename);
 
 
 /**
  * @brief X Gradient Calculator
- * 
- * Computes the x gradient of a function using central differences, with one sided differences at the boundaries. 
- * 
- * @param function Function vector to differentiate.
- * @param grad_x Gradient of the function in x.
+ *
+ * Computes the x gradient of a field using central differences, with one sided differences at the boundaries.
+ *
+ * @param function Field to differentiate.
+ * @param grad_x Gradient of the field in x. Its grid is set from the input, and its values are overwritten.
  */
 void gradient_x(
-    const std::vector<Function>& function, 
-    std::vector<Function>& grad_x);
+    const Field& function,
+    Field& grad_x);
 
 
 /**
  * @brief Y Gradient Calculator
- * 
- * Computes the y gradient of a function using central differences, with one sided differences at the boundaries. 
- * 
- * @param function Function vector to differentiate.
- * @param grad_y Gradient of the function in y.
+ *
+ * Computes the y gradient of a field using central differences, with one sided differences at the boundaries.
+ *
+ * @param function Field to differentiate.
+ * @param grad_y Gradient of the field in y. Its grid is set from the input, and its values are overwritten.
  */
 void gradient_y(
-    const std::vector<Function>& function, 
-    std::vector<Function>& grad_y);
+    const Field& function,
+    Field& grad_y);
 
 
 /**
  * @brief Gradient Magnitude Calculator
- * 
- * Computes the magnitude of the gradient from its x and y components. 
- * 
- * @param grad_x Gradient of the function in x.
- * @param grad_y Gradient of the function in y.
- * @param grad_mag Magnitude of the gradient.
+ *
+ * Computes the magnitude of the gradient from its x and y components.
+ *
+ * @param grad_x Gradient of the field in x.
+ * @param grad_y Gradient of the field in y.
+ * @param grad_mag Magnitude of the gradient. Its grid is set from the input, and its values are overwritten.
  */
 void gradient_mag(
-    const std::vector<Function>& grad_x, 
-    const std::vector<Function>& grad_y, 
-    std::vector<Function>& grad_mag);
+    const Field& grad_x,
+    const Field& grad_y,
+    Field& grad_mag);
+
+
+/**
+ * @brief Gradient Magnitude Calculator, in place
+ *
+ * Computes the magnitude of the gradient straight from the field, without the x and y gradient fields in between.
+ * The magnitude REPLACES the values of the field, so the original values are gone afterwards and no extra field is needed.
+ * Same differences (central inside, one sided on the boundary) and the same arithmetic as gradient_x, gradient_y and gradient_mag,
+ * so the result is the same. Rows are processed in blocks, in parallel, and the result does not depend on the number of threads.
+ *
+ * @param function Field to differentiate. Overwritten with the gradient magnitude.
+ */
+void gradient_magnitude_inplace(Field& function);
 
 
 /**

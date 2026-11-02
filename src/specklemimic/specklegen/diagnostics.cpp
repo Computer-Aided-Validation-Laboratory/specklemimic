@@ -6,11 +6,11 @@
 #include <algorithm>
 #include <numbers>
 
-double mig(const std::vector<Function>& grad_mag){
+double mig(const Field& grad_mag){
 
     //Defining helper variables. 
-    int nx = grad_mag[0].nx;
-    int ny = grad_mag[0].ny;
+    int nx = grad_mag.grid.nx;
+    int ny = grad_mag.grid.ny;
 
     //Create empty variable for MIG.
     double MIG{0.0};
@@ -20,7 +20,7 @@ double mig(const std::vector<Function>& grad_mag){
         for(int j = 0; j < ny; j++){
 
             int index = i * ny + j;
-            MIG += grad_mag[index].f;
+            MIG += grad_mag.f[index];
 
         }
     }
@@ -34,7 +34,7 @@ double mig(const std::vector<Function>& grad_mag){
 
 void histogram_generator(
     const int nbins, 
-    const std::vector<Function>& function, 
+    const Field& function, 
     std::vector<Histogram>& histogram, 
     std::vector<Histogram>& probability_density, 
     double& mean, 
@@ -55,9 +55,9 @@ void histogram_generator(
     }
 
     //Loop over image point to sort into appropriate bin. 
-    for (const auto& point: function){
+    for (const double value: function.f){
 
-        int bin_index = static_cast<int>(std::floor((point.f - min_f) / df));
+        int bin_index = static_cast<int>(std::floor((value - min_f) / df));
         bin_index = std::clamp(bin_index, 0, nbins - 1);
 
         histogram[bin_index].f += 1.0;
@@ -67,7 +67,7 @@ void histogram_generator(
     std::cout << "Finished generating histogram with " << nbins << " bins." << std::endl;
 
     //Get element counts.
-    double N = function.size();
+    double N = function.f.size();
 
     probability_density = histogram;
 
@@ -111,6 +111,8 @@ std::vector<Points> autocorrelation_grad_r(
     grad_r.resize(ny * ny); 
 
     //Loop over points in autocorrelation landscape to compute gradient. 
+    //Every point only reads the landscape and writes its own gradient, so rows are independent.
+    #pragma omp parallel for
     for(int i = 0; i < ny; i++){ 
         for(int j = 0; j < ny; j++){ 
             int index = (ny * i) + j; 
@@ -469,7 +471,7 @@ void autocorrelation_peak_comp(
 std::vector<Points> sssig_heatmap_generator(
     const int ss_size, 
     const int ss_step, 
-    const std::vector<Function>& grad_mag, 
+    const Field& grad_mag, 
     const double subpixel,
     const int width,
     const int height
@@ -477,8 +479,8 @@ std::vector<Points> sssig_heatmap_generator(
 {
 
     //Get nx,ny for actual grid.
-    int nx = grad_mag[0].nx;
-    int ny = grad_mag[0].ny;
+    int nx = grad_mag.grid.nx;
+    int ny = grad_mag.grid.ny;
 
     //For subpixel switches. 
     const int k = static_cast<int>(std::lround(1.0 / subpixel));
@@ -498,6 +500,8 @@ std::vector<Points> sssig_heatmap_generator(
     std::vector<Points> sssig_map;
     sssig_map.resize(n_ss_x * n_ss_y);
 
+    //Every subset only reads the gradient magnitude and writes its own entry of the map, so subset columns are independent.
+    #pragma omp parallel for
     for(int xs = 0; xs < n_ss_x; xs++){
 
         //Window Definitions in px. 
@@ -531,7 +535,7 @@ std::vector<Points> sssig_heatmap_generator(
                     
                     int grid_index = i * ny + j;
 
-                    sssig_map[px_index].r += grad_mag[grid_index].f;
+                    sssig_map[px_index].r += grad_mag.f[grid_index];
                     subset_px_count++;
 
                 }

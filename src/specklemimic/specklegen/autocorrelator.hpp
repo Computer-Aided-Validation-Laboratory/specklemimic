@@ -27,7 +27,7 @@
  */
 void autocorrelator_ssd(
     std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    const Field& function, 
     const double subpixel);
 
 
@@ -40,7 +40,7 @@ void autocorrelator_ssd(
  */
 void autocorrelator_scc(
     std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    const Field& function, 
     const double subpixel);
 
 
@@ -53,7 +53,7 @@ void autocorrelator_scc(
  */
 void autocorrelator_nssd(
     std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    const Field& function, 
     const double subpixel);
 
 
@@ -66,7 +66,7 @@ void autocorrelator_nssd(
  */
 void autocorrelator_zssd(
     std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    const Field& function, 
     const double subpixel);
 
 
@@ -79,7 +79,7 @@ void autocorrelator_zssd(
  */
 void autocorrelator_znssd(
     std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    const Field& function, 
     const double subpixel);
 
 
@@ -92,5 +92,5 @@ void autocorrelator_znssd(
  */
 void autocorrelator_zncc(
     std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    const Field& function, 
     const double subpixel);

@@ -27,7 +27,7 @@ bool needs_autocorrelation(LossType type)
 }
 
 LossContext build_loss_context(
-    const std::vector<Function>& ground_truth,
+    const Field& ground_truth,
     const LossSettings& settings,
     const bool need_sssig,
     const bool need_autocorr)
@@ -36,18 +36,13 @@ LossContext build_loss_context(
     LossContext context;
     context.settings = settings;
     context.ground_truth = ground_truth;
-    context.background = background_generator(settings.width, settings.height, settings.subpixel);
 
-    //Enough Halton points for the most speckles the optimizer bounds can ask for.
-    //Gray values and grid layout for the loss that only needs gray values.
     //The sum of squares is accumulated in the same order graylevel_mse uses, so the normalisation is the same number.
-    context.grid = grid_info(context.background);
-    context.truth_f.resize(ground_truth.size());
-    for(size_t k = 0; k < ground_truth.size(); k++){
-        context.truth_f[k] = ground_truth[k].f;
-        context.truth_norm += ground_truth[k].f * ground_truth[k].f;
+    for(size_t k = 0; k < ground_truth.f.size(); k++){
+        context.truth_norm += ground_truth.f[k] * ground_truth.f[k];
     }
 
+    //Enough Halton points for the most speckles the optimizer bounds can ask for.
     context.halton = generate_halton_table(speckle_numbers(settings.width, settings.height, settings.min_speckle_size, settings.max_ratio));
 
     if(need_sssig == true){
@@ -66,10 +61,10 @@ LossContext build_loss_context(
 //---------------------------------------------------------------------------
 //DIAGNOSTICS. Same machinery as the speckle generator (gen.cpp).
 
-std::vector<Function> generate_pattern(
+void generate_pattern_into(
+    Field& pattern,
     const double speckleSize,
     const double ratio,
-    std::vector<Function> background,
     const double width,
     const double height,
     const HaltonTable* table)
@@ -83,30 +78,42 @@ std::vector<Function> generate_pattern(
         ? generate_speckles_random(width, height, speckleCount, speckleSize, false)
         : seeds_from_table(*table, width, height, speckleCount, speckleSize)};
 
-    speckle_filler(background, seeds);
-
-    return background;
+    //Clear what the field held before (no allocation once it has its size), then write the speckles.
+    pattern.f.assign(static_cast<size_t>(pattern.grid.nx) * pattern.grid.ny, 0.0);
+    speckle_filler(pattern, seeds);
 
 }
 
-std::vector<Points> compute_sssig(
-    const std::vector<Function>& pattern,
+Field generate_pattern(
+    const double speckleSize,
+    const double ratio,
+    const GridInfo& grid,
+    const double width,
+    const double height,
+    const HaltonTable* table)
+{
+
+    Field pattern;
+    pattern.grid = grid;
+
+    generate_pattern_into(pattern, speckleSize, ratio, width, height, table);
+
+    return pattern;
+
+}
+
+std::vector<Points> compute_sssig_consume(
+    Field& pattern,
     const LossSettings& settings)
 {
 
-    //Gradient vectors take their grid from a background.
-    std::vector<Function> grad_X {background_generator(settings.width, settings.height, settings.subpixel)};
-    std::vector<Function> grad_Y {grad_X};
-    std::vector<Function> grad_Mag {grad_X};
-
-    gradient_x(pattern, grad_X);
-    gradient_y(pattern, grad_Y);
-    gradient_mag(grad_X, grad_Y, grad_Mag);
+    //The gradient magnitude is computed straight from the pattern, over the pattern itself. No gradient fields are stored.
+    gradient_magnitude_inplace(pattern);
 
     return sssig_heatmap_generator(
         settings.ss_size,
         settings.ss_step,
-        grad_Mag,
+        pattern,
         settings.subpixel,
         static_cast<int>(settings.width),
         static_cast<int>(settings.height)
@@ -114,8 +121,21 @@ std::vector<Points> compute_sssig(
 
 }
 
+std::vector<Points> compute_sssig(
+    const Field& pattern,
+    const LossSettings& settings)
+{
+
+    //The magnitude replaces the values it is computed from, so work on a copy. One copy per thread, reused.
+    static thread_local Field scratch;
+    scratch = pattern;
+
+    return compute_sssig_consume(scratch, settings);
+
+}
+
 std::vector<Points> compute_autocorrelation(
-    const std::vector<Function>& pattern,
+    const Field& pattern,
     const LossSettings& settings)
 {
 
@@ -152,13 +172,13 @@ AutocorrScalars compute_autocorr_scalars(
 //RELATIVE ERRORS.
 
 double graylevel_mse(
-    const std::vector<Function>& ground_truth,
-    const std::vector<Function>& candidate)
+    const Field& ground_truth,
+    const Field& candidate)
 {
 
     //Loop and compute the relative gray level MSE.
-    int nx = candidate[0].nx;
-    int ny = candidate[0].ny;
+    int nx = candidate.grid.nx;
+    int ny = candidate.grid.ny;
 
     double loss {0.0};
     double norm {0.0};
@@ -167,8 +187,8 @@ double graylevel_mse(
         for(int j = 0; j < ny; j++){
 
             int index = i * ny + j;
-            loss += (ground_truth[index].f - candidate[index].f) * (ground_truth[index].f - candidate[index].f);
-            norm += ground_truth[index].f * ground_truth[index].f;
+            loss += (ground_truth.f[index] - candidate.f[index]) * (ground_truth.f[index] - candidate.f[index]);
+            norm += ground_truth.f[index] * ground_truth.f[index];
 
         }
     }
@@ -267,8 +287,8 @@ double graylevelmse_seeds(
     const double* x,
     size_t d,
     const double r,
-    const std::vector<Function>& ground_truth,
-    std::vector<Function> background,
+    const Field& ground_truth,
+    Field background,
     const double subpixel,
     const size_t n)
 {
@@ -288,7 +308,7 @@ double graylevelmse_seeds(
 
 }
 
-std::vector<Function> patternreconstructor_seeds(
+Field patternreconstructor_seeds(
     const PSOResult& result,
     const int width,
     const int height,
@@ -299,7 +319,7 @@ std::vector<Function> patternreconstructor_seeds(
 {
 
     //Create a background
-    std::vector<Function> function {background_generator(width, height, subpixel)};
+    Field function {background_generator(width, height, subpixel)};
 
     //Get the seeds.
     std::vector<Points> seeds;
@@ -320,40 +340,22 @@ std::vector<Function> patternreconstructor_seeds(
 //---------------------------------------------------------------------------
 //PARAMETER LOSSES. Optimize the speckle generator parameters {speckle size, ratio}.
 
-//Relative gray level MSE on plain arrays of gray values. Same arithmetic and same order as graylevel_mse, so the same number.
-static double graylevel_mse_field(const LossContext& context, const std::vector<double>& candidate)
+//Relative gray level MSE against the stored ground truth. Same arithmetic and same order as graylevel_mse, so the same number,
+//but the sum of squares of the ground truth is not summed again for every evaluation.
+static double graylevel_mse_context(const LossContext& context, const Field& candidate)
 {
 
     double loss {0.0};
 
-    for(size_t index = 0; index < candidate.size(); index++){
-        loss += (context.truth_f[index] - candidate[index]) * (context.truth_f[index] - candidate[index]);
+    for(size_t index = 0; index < candidate.f.size(); index++){
+        loss += (context.ground_truth.f[index] - candidate.f[index]) * (context.ground_truth.f[index] - candidate.f[index]);
     }
 
     if(context.truth_norm < RELATIVE_FLOOR){
-        return loss / (context.grid.nx * context.grid.ny);
+        return loss / (context.ground_truth.grid.nx * context.ground_truth.grid.ny);
     }
 
     return loss / context.truth_norm;
-
-}
-
-//Gray level loss without building a full Function grid. Only the gray values are generated, in a buffer each thread keeps and reuses.
-static double graylevel_params_loss(const double* x, const LossContext& context)
-{
-
-    const LossSettings& settings {context.settings};
-
-    int speckleCount {speckle_numbers(settings.width, settings.height, x[0], x[1])};
-    std::vector<Points> seeds {seeds_from_table(context.halton, settings.width, settings.height, speckleCount, x[0])};
-
-    //One buffer per thread, allocated the first time and then only cleared. The gray values are 8 bytes per point (the Function grid was 32).
-    static thread_local std::vector<double> field;
-    field.assign(context.truth_f.size(), 0.0);
-
-    speckle_filler_field(field, context.grid, seeds);
-
-    return graylevel_mse_field(context, field);
 
 }
 
@@ -364,25 +366,23 @@ double params_loss(
     const LossContext& context)
 {
 
-    //The gray level loss only needs gray values, so it skips the full grid.
-    if(type == LossType::GrayLevel){
-        return graylevel_params_loss(x, context);
-    }
-
     const LossSettings& settings {context.settings};
 
-    std::vector<Function> pattern {generate_pattern(x[0], x[1], context.background, settings.width, settings.height, &context.halton)};
+    //One pattern per thread, allocated the first time and then only cleared and refilled. It needs 8 bytes per point.
+    static thread_local Field pattern;
+    pattern.grid = context.ground_truth.grid;
+    generate_pattern_into(pattern, x[0], x[1], settings.width, settings.height, &context.halton);
 
     switch(type){
 
         case LossType::GrayLevel:
-            return graylevel_mse(context.ground_truth, pattern);
+            return graylevel_mse_context(context, pattern);
 
         case LossType::SSSIGMSE:
-            return relative_mse(context.truth_sssig, compute_sssig(pattern, settings));
+            return relative_mse(context.truth_sssig, compute_sssig_consume(pattern, settings));
 
         case LossType::SSSIGVar: {
-            std::vector<Points> sssig {compute_sssig(pattern, settings)};
+            std::vector<Points> sssig {compute_sssig_consume(pattern, settings)};
             return relative_mse(context.truth_sssig, sssig) + relative_residual_variance(context.truth_sssig, sssig);
         }
 
@@ -404,15 +404,15 @@ double params_loss(
 
 }
 
-std::vector<Function> patternreconstructor_params(
+Field patternreconstructor_params(
     const PSOResult& result,
     const double width,
     const double height,
     const double subpixel)
 {
 
-    std::vector<Function> background {background_generator(width, height, subpixel)};
+    Field background {background_generator(width, height, subpixel)};
 
-    return generate_pattern(result.best_pos[0], result.best_pos[1], background, width, height);
+    return generate_pattern(result.best_pos[0], result.best_pos[1], background.grid, width, height);
 
 }

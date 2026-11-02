@@ -96,66 +96,59 @@ std::vector<Points> seeds_from_table(
 
 }
 
-std::vector<Function> background_generator(
+
+GridInfo grid_generator(
     const double width, 
     const double height, 
     const double subpixel)
 {
 
     //Generate 1D arrays
-    int nx = std::round((width / subpixel));
-    int ny = std::round((height / subpixel));
-    
-    double dx {width / nx};
-    double dy {height / ny};
+    GridInfo grid;
+    grid.nx = std::round((width / subpixel));
+    grid.ny = std::round((height / subpixel));
 
-    std::vector<Function> background;
-    background.resize(nx * ny);
+    grid.x0 = 0.0;
+    grid.y0 = 0.0;
+    grid.dx = width / grid.nx;
+    grid.dy = height / grid.ny;
 
-    for (int i = 0; i < nx; i++){
-        for (int j = 0; j < ny; j++){
+    return grid;
 
-            int index = i * ny + j;
+}
 
-            background[index].x = i * dx;
-            background[index].y = j * dy;
-            background[index].f = 0.0; 
-            background[index].nx = nx;
-            background[index].ny = ny;
+Field background_generator(
+    const double width, 
+    const double height, 
+    const double subpixel)
+{
 
-        }
-    }
-    
+    Field background;
+    background.grid = grid_generator(width, height, subpixel);
+    background.f.assign(static_cast<size_t>(background.grid.nx) * background.grid.ny, 0.0);
+
     return background;
 
 }
 
 void speckle_filler(
-    std::vector<Function>& background,
+    Field& background,
     const std::vector<Points>& seeds)
 {
  
     //Nothing to fill.
-    if (background.empty()) {
+    if (background.f.empty()) {
         return;
     }
  
-    //Grid layout is set by background_generator: index = i * ny + j, with x = i * dx and y = j * dy.
-    int nx = background[0].nx;
-    int ny = background[0].ny;
- 
-    //Recover the grid origin and spacing from the background itself, so the inputs stay the same.
-    double x0 {background[0].x};
-    double y0 {background[0].y};
-    double dx {1.0};
-    double dy {1.0};
- 
-    if (nx > 1) {
-        dx = background[ny].x - x0;     //Point (i = 1, j = 0).
-    }
-    if (ny > 1) {
-        dy = background[1].y - y0;      //Point (i = 0, j = 1).
-    }
+    //Grid layout: index = i * ny + j, with x = x0 + i * dx and y = y0 + j * dy. Nothing is stored per point.
+    const GridInfo& grid {background.grid};
+    const int nx {grid.nx};
+    const int ny {grid.ny};
+    const double x0 {grid.x0};
+    const double y0 {grid.y0};
+    const double dx {grid.dx};
+    const double dy {grid.dy};
  
     //Loop over seeds, and only visit the background points near each one.
     //Seeds are independent, so they are shared out between threads (one fork for the whole fill, not one per speckle).
@@ -163,7 +156,7 @@ void speckle_filler(
     for (long long s = 0; s < static_cast<long long>(seeds.size()); s++) {
 
         const Points& seed = seeds[s];
-
+ 
         //Bounding box of the speckle in grid indices.
         //Padded by one cell so rounding can never cut off an edge point. The exact distance test below still decides.
         double i_lo {std::floor((seed.x - seed.r - x0) / dx) - 1.0};
@@ -181,100 +174,18 @@ void speckle_filler(
  
         //i is the outer loop and j the inner one, so memory is read in order (index = i * ny + j).
         for (int i = imin; i <= imax; i++) {
+
+            double ddx = grid.x(i) - seed.x;
+
             for (int j = jmin; j <= jmax; j++) {
  
-                Function& point = background[static_cast<size_t>(i) * ny + j];
- 
-                double ddx = point.x - seed.x;
-                double ddy = point.y - seed.y;
+                double ddy = grid.y(j) - seed.y;
  
                 //Inside the speckle, set it. Overlapping speckles just set the same value again, so no break is needed.
                 //Every thread writes the same 1.0, the atomic write only makes that overlap formally race free.
                 if (ddx * ddx + ddy * ddy <= r2) {
                     #pragma omp atomic write
-                    point.f = 1.0;
-                }
-            }
-        }
-    }
-}
-GridInfo grid_info(const std::vector<Function>& background)
-{
-
-    GridInfo grid;
-
-    //Nothing to describe.
-    if (background.empty()) {
-        return grid;
-    }
-
-    //Same recovery as in speckle_filler.
-    grid.nx = background[0].nx;
-    grid.ny = background[0].ny;
-    grid.x0 = background[0].x;
-    grid.y0 = background[0].y;
-
-    if (grid.nx > 1) {
-        grid.dx = background[grid.ny].x - grid.x0;     //Point (i = 1, j = 0).
-    }
-    if (grid.ny > 1) {
-        grid.dy = background[1].y - grid.y0;           //Point (i = 0, j = 1).
-    }
-
-    return grid;
-
-}
-
-void speckle_filler_field(
-    std::vector<double>& field,
-    const GridInfo& grid,
-    const std::vector<Points>& seeds)
-{
-
-    //Nothing to fill.
-    if (field.empty()) {
-        return;
-    }
-
-    const int nx {grid.nx};
-    const int ny {grid.ny};
-    const double x0 {grid.x0};
-    const double y0 {grid.y0};
-    const double dx {grid.dx};
-    const double dy {grid.dy};
-
-    //Same loop as speckle_filler. The coordinates are computed (x0 + i * dx), which is the value background_generator stores.
-    #pragma omp parallel for
-    for (long long s = 0; s < static_cast<long long>(seeds.size()); s++) {
-
-        const Points& seed = seeds[s];
-
-        double i_lo {std::floor((seed.x - seed.r - x0) / dx) - 1.0};
-        double i_hi {std::ceil((seed.x + seed.r - x0) / dx) + 1.0};
-        double j_lo {std::floor((seed.y - seed.r - y0) / dy) - 1.0};
-        double j_hi {std::ceil((seed.y + seed.r - y0) / dy) + 1.0};
-
-        int imin {static_cast<int>(std::clamp(i_lo, 0.0, nx - 1.0))};
-        int imax {static_cast<int>(std::clamp(i_hi, 0.0, nx - 1.0))};
-        int jmin {static_cast<int>(std::clamp(j_lo, 0.0, ny - 1.0))};
-        int jmax {static_cast<int>(std::clamp(j_hi, 0.0, ny - 1.0))};
-
-        double r2 {seed.r * seed.r};
-
-        for (int i = imin; i <= imax; i++) {
-
-            double point_x {x0 + i * dx};
-            double ddx = point_x - seed.x;
-
-            for (int j = jmin; j <= jmax; j++) {
-
-                double point_y {y0 + j * dy};
-                double ddy = point_y - seed.y;
-
-                //Every thread writes the same 1.0, the atomic write only makes overlapping speckles formally race free.
-                if (ddx * ddx + ddy * ddy <= r2) {
-                    #pragma omp atomic write
-                    field[static_cast<size_t>(i) * ny + j] = 1.0;
+                    background.f[static_cast<size_t>(i) * ny + j] = 1.0;
                 }
             }
         }

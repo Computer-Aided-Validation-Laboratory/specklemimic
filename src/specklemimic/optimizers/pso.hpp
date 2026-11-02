@@ -11,7 +11,6 @@
 #include <fstream>
 #include <chrono>
 #include <cstdint>
-#include "specklegen/helpers.hpp"
 
 /**
  * @brief Structure for a Particle Swarm with Global Swarm Topology
@@ -64,6 +63,16 @@ struct GBSwarmTopology {
 struct PSOResult {
     std::vector<double> best_pos;   //Best position in PHYSICAL coordinates.
     double best_val;                //Objective value at best_pos.
+};
+
+
+/**
+ * @brief One particle of a 2D run as it is saved in the history file: the two physical coordinates and the objective value.
+ */
+struct PSOHistoryPoint {
+    double x;
+    double y;
+    double f;
 };
 
 
@@ -194,7 +203,7 @@ PSOResult spsoptimzer(
         auto iter_start = std::chrono::high_resolution_clock::now();
 
         //One slot per particle for iteration tracking to keep things thread safe.
-        std::vector<Function> iterationPoints;
+        std::vector<PSOHistoryPoint> iterationPoints;
         if (trackHistory) {
             iterationPoints.resize(n);
         }

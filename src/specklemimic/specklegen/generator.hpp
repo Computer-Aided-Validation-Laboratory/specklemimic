@@ -84,71 +84,46 @@ std::vector<Points> seeds_from_table(
 
 
 /**
- * @brief Background Generator
- * 
- * Fills out the x,y grid for a vector with the function structure. This is the initializer for a bunch of functions. 
- * 
+ * @brief Grid Generator
+ *
+ * Describes the uniform grid for a region and subpixel resolution. The grid is only described (GridInfo), never stored point by point.
+ *
  * @param width Width of the ROI. (x)
  * @param height Height of the ROI. (y)
  * @param subpixel Subpixel resolution we are going till.
- * @return std::vector<Function> Background generated function vector.
+ * @return GridInfo Grid of the ROI. The origin is 0, 0.
  */
-std::vector<Function> background_generator(
-    const double width, 
-    const double height, 
+GridInfo grid_generator(
+    const double width,
+    const double height,
+    const double subpixel);
+
+
+/**
+ * @brief Background Generator
+ *
+ * Creates an all zero field on the grid of the ROI. This is the initializer for a bunch of functions.
+ *
+ * @param width Width of the ROI. (x)
+ * @param height Height of the ROI. (y)
+ * @param subpixel Subpixel resolution we are going till.
+ * @return Field Background field, all values 0.
+ */
+Field background_generator(
+    const double width,
+    const double height,
     const double subpixel);
 
 
 /**
  * @brief Speckle Filler
- * 
- * Fills out the speckle pattern based on given speckle seeds. 
- * 
- * @param background Background generated function vector.
+ *
+ * Fills out the speckle pattern based on given speckle seeds.
+ * The speckles are written on top of what is already in the field, so the field can be reused after clearing it.
+ *
+ * @param background Field to fill, grid set and f of size nx * ny.
  * @param seeds Seed points for the speckle pattern.
  */
 void speckle_filler(
-    std::vector<Function>& background,
-    const std::vector<Points>& seeds);
-
-
-/**
- * @brief Uniform grid description.
- *
- * Everything the grid layout needs, stored once instead of in every point: index = i * ny + j, x = x0 + i * dx, y = y0 + j * dy.
- */
-struct GridInfo {
-    int nx {0};
-    int ny {0};
-    double x0 {0.0};
-    double y0 {0.0};
-    double dx {1.0};
-    double dy {1.0};
-};
-
-
-/**
- * @brief Grid Description from a Background
- *
- * Recovers the layout with the same arithmetic speckle_filler uses.
- *
- * @param background Background generated function vector.
- * @return GridInfo Layout of that background.
- */
-GridInfo grid_info(const std::vector<Function>& background);
-
-
-/**
- * @brief Speckle Filler on gray values only
- *
- * Same as speckle_filler (same bounding boxes, same coordinates, same distance test), but writes into a plain array of gray values.
- * Needs 8 bytes per point instead of 32, and the array can be reused between calls.
- *
- * @param field Gray values, nx * ny entries, index = i * ny + j. Speckles are written on top of what is already there.
- * @param grid Layout of the grid.
- * @param seeds Seed points for the speckle pattern.
- */
-void speckle_filler_field(
-    std::vector<double>& field,
-    const GridInfo& grid,
+    Field& background,
     const std::vector<Points>& seeds);

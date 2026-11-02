@@ -125,7 +125,7 @@ int basegenerator(){
     std::vector<Points> points {generate_speckles_random(width, height, speckleCount, speckleSize)}; //Create vector with the structure. 
 
     //Create a background. 
-    std::vector<Function> function {background_generator(width, height, subpixel)};
+    Field function {background_generator(width, height, subpixel)};
 
     //Fill background. 
     speckle_filler(function, points);
@@ -143,8 +143,8 @@ int basegenerator(){
 
     //GENERATE GRADIENTS FOR DIAGNOSTICS
     //Create a gradient vectors.
-    std::vector<Function> grad_X {background_generator(width, height, subpixel)};
-    std::vector<Function> grad_Y {background_generator(width, height, subpixel)};
+    Field grad_X {background_generator(width, height, subpixel)};
+    Field grad_Y {background_generator(width, height, subpixel)};
 
     //Populate gradient vectors.
     gradient_x(function, grad_X);
@@ -157,7 +157,7 @@ int basegenerator(){
     }
     
     //Compute the gradient magnitude. 
-    std::vector<Function> grad_Mag {background_generator(width, height, subpixel)};
+    Field grad_Mag {background_generator(width, height, subpixel)};
     gradient_mag(grad_X, grad_Y, grad_Mag);
 
     //Export gradient magnitudes to a .csv file.
