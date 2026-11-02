@@ -35,8 +35,27 @@ WSHED_FILE_PATTERN = "{name}_wshedgrad.csv"
 LEGACY_GRADR_FILENAME = "autogradr.csv"
 LEGACY_WSHED_FILENAME = "wshedgrad.csv"
 
+# Reconstruction files, saved by the backend in <runfolder>/.
+GROUNDTRUTH_FILENAME = "groundtruth.csv"
+FINALRESULT_FILENAME = "finalresult.csv"
+RECON_FIGURE_FILENAME = "reconstruction_comparison.png"
+RECON_METRICS_FILENAME = "reconstruction_metrics.csv"
+
+# Optimizer files, saved by the backend in <runfolder>/optimizer/.
+OPT_SUBDIR = "optimizer"
+OPT_HISTORY_FILENAME = "history.csv"  # Only written for 2D runs.
+OPT_DOMAIN_FILENAME = "domain.csv"    # Only written for 2D runs.
+OPT_LOSS_FILENAME = "loss.csv"
+OPT_POST_SUBDIR = "optimizer"         # Subfolder of <run>_post/ for optimizer figures.
+
+# Optimizer animation settings.
+ANIMATION_DPI = 100       # Far lower than DEFAULT_DPI, animations are many frames.
+ANIMATION_FPS = 12
+MAX_ANIMATION_FRAMES = 120  # Iterations are skipped evenly above this.
+
 # Column names used in the CSVs.
 COL_X = "x"
 COL_Y = "y"
 COL_VALUE = "f"
 COL_VALUE_ALT = "r"  # Some watershed files store the value in "r".
+COL_ITERATION = "iteration"  # Optimizer history and loss files.

@@ -1,5 +1,4 @@
 #pragma once
-
 #include <algorithm>
 #include <cstddef>
 #include <iostream>
@@ -10,8 +9,9 @@
 #include <string>
 #include <filesystem>
 #include <fstream>
-#include "helpers.hpp"
-
+#include <chrono>
+#include <cstdint>
+#include "specklegen/helpers.hpp"
 
 /**
  * @brief Structure for a Particle Swarm with Global Swarm Topology
@@ -111,7 +111,10 @@ void reflect_unit(double& x, double& v);
  * @param acceleration2 Acceleration (Social Influence) term of PSO. Defaults to 1.49445 (stability).
  * @param seed Seed for reproducibility.
  * @param verbose More print statements!
- * @param optimizer_name Optional name tag for tracking 2D iteration history and domain files.
+ * @param optimizer_name Run folder the optimizer files are saved in (inside its optimizer/ subfolder).
+ *                       2D runs also save history.csv (iteration, x, y, f for every particle) and domain.csv (the bounds) when this is set.
+ *                       If empty, only the loss history is saved, to ./optimizer/.
+ * @param loss_history Save the global best value of every iteration to <optimizer_name>/optimizer/loss.csv (columns: iteration, f).
  * @return PSOResult 
  */
 template <typename ObjectiveFunction>
@@ -128,8 +131,11 @@ PSOResult spsoptimzer(
     double acceleration2 = 1.49445,
     unsigned long long seed = 42,
     bool verbose = true,
-    const std::string& optimizer_name = "")
+    const std::string& optimizer_name = "",
+    bool loss_history = false)
 {
+
+    std::cout << " | Starting Particle Swarm Optimization" << std::endl;
 
     //Some control flows for the input.
     if(n == 0 || d == 0) throw std::invalid_argument("Number of particles and dimensions must not be 0!");
@@ -139,7 +145,6 @@ PSOResult spsoptimzer(
     //It is overwritten with user passed defaults.
     std::vector<double> lo_(d, 0.0), hi_(d, 1.0);
     if(!default_bounds){
-
         //Size mismatch arguments.
         if(lo.size() != d || hi.size() != d)
             throw std::invalid_argument("Lower bound and upper bound arrays must have d entries");
@@ -157,37 +162,61 @@ PSOResult spsoptimzer(
     std::mt19937_64 gen(seed);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
-    //Helper variable to store the properly scaled particle values.
-    std::vector<double> xphys(d);
-
     //Initialize the swarm.
     gbinitializer(swarmState, gen);
 
-    // Setup history and domain tracking for 2D if an optimizer name is provided
+    //All optimizer files go in <optimizer_name>/optimizer/, so they sit next to the rest of the run's data.
+    //With no name they go in ./optimizer/.
+    std::filesystem::path optimizerDir = std::filesystem::path(optimizer_name) / "optimizer";
+
+    //Setup history and domain tracking for 2D if an optimizer name is provided
     bool trackHistory = (d == 2 && !optimizer_name.empty());
     std::string historyFilename = "";
     if (trackHistory) {
-        std::filesystem::create_directories("optimizer");
-        historyFilename = "optimizer/" + optimizer_name + "_history.csv";
+        std::filesystem::create_directories(optimizerDir);
+        historyFilename = (optimizerDir / "history.csv").string();
         std::ofstream histFile(historyFilename);
         histFile << "iteration,x,y,f\n";
 
-        std::string domainFilename = "optimizer/" + optimizer_name + "_domain.csv";
-        std::ofstream domFile(domainFilename);
+        std::ofstream domFile(optimizerDir / "domain.csv");
         domFile << "lo_x,lo_y,hi_x,hi_y\n";
         domFile << lo_[0] << "," << lo_[1] << "," << hi_[0] << "," << hi_[1] << "\n";
     }
 
+    //Setup loss history tracking. Stores the global best value after every iteration.
+    std::vector<double> lossHistory;
+    if (loss_history) {
+        lossHistory.reserve(static_cast<size_t>(it));
+    }
+
     //Iteration Loop.
     for(int i = 0; i < it; i++){
+        auto iter_start = std::chrono::high_resolution_clock::now();
 
+        //One slot per particle for iteration tracking to keep things thread safe.
         std::vector<Function> iterationPoints;
         if (trackHistory) {
-            iterationPoints.reserve(n);
+            iterationPoints.resize(n);
         }
 
-        //Loop over particles.
+        //Particles are independent within an iteration, so they are evaluated in parallel.
+        //Static scheduling is being used here for some more robustness.
+        #pragma omp parallel for schedule(static, 1)
         for(size_t n_ = 0; n_ < n; n_++){
+
+            //Every (iteration, particle) pair gets its own generator, seeded from the run seed.
+            //This is thread-safe, and the numbers drawn do not depend on how many threads run or which one gets the particle.
+            std::seed_seq seed_sequence{
+                static_cast<std::uint32_t>(seed),
+                static_cast<std::uint32_t>(seed >> 32),
+                static_cast<std::uint32_t>(i),
+                static_cast<std::uint32_t>(n_)
+            };
+            std::mt19937_64 gen_p(seed_sequence);
+            std::uniform_real_distribution<double> dist_p(0.0, 1.0);
+
+            //Physical coordinates of this particle, private to this thread.
+            std::vector<double> xphys(d);
 
             //Loop over dimensions.
             for(size_t d_ = 0; d_ < d; d_++){
@@ -197,8 +226,8 @@ PSOResult spsoptimzer(
                 double cognitive_influence = swarmState.pbest_pos[index] - swarmState.pos[index];
                 double social_influence = swarmState.gbest_pos[d_] - swarmState.pos[index];
 
-                double r1 = dist(gen);
-                double r2 = dist(gen);
+                double r1 = dist_p(gen_p);
+                double r2 = dist_p(gen_p);
 
                 //Velocity Update (skipped on i == 0 as a slight burn in)
                 if(i != 0){
@@ -234,7 +263,7 @@ PSOResult spsoptimzer(
 
             // Record physical coordinates and function value for history tracking
             if (trackHistory) {
-                iterationPoints.push_back({xphys[0], xphys[1], f_val});
+                iterationPoints[n_] = {xphys[0], xphys[1], f_val};
             }
         }
 
@@ -246,6 +275,11 @@ PSOResult spsoptimzer(
             }
         }
 
+        //Record the global best value of this iteration for the loss history.
+        if (loss_history) {
+            lossHistory.push_back(swarmState.gbest_val);
+        }
+
         // Append iteration history to CSV file
         if (trackHistory) {
             std::ofstream histFile(historyFilename, std::ios::app);
@@ -254,11 +288,26 @@ PSOResult spsoptimzer(
             }
         }
 
+        auto iter_end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed = iter_end - iter_start;
+
         //Print values out each iteration.
         if(verbose && i > 0){
-            std::cout << " | Iteration = " << i << " | Global Best Value = " << swarmState.gbest_val << " | " << std::endl;
+            std::cout << " | Iteration = " << i << " | Global Best Value = " << swarmState.gbest_val << " | Time = " << elapsed.count() << " ms |" << std::endl;
         }
 
+    }
+
+    //Write the loss history to a csv file: iteration in the first column, global best value in the second.
+    if (loss_history) {
+        std::filesystem::create_directories(optimizerDir);
+        std::string lossFilename = (optimizerDir / "loss.csv").string();
+        std::ofstream lossFile(lossFilename);
+        lossFile << "iteration,f\n";
+        for (size_t k = 0; k < lossHistory.size(); k++) {
+            lossFile << k << "," << lossHistory[k] << "\n";
+        }
+        std::cout << " | Saved loss history to: " << lossFilename << std::endl;
     }
 
     //Return the best point in physical coordinates.

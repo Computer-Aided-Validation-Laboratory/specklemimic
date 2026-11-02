@@ -354,13 +354,14 @@ void autocorrelation_peak_comp(
     //Fallback to boundadry if nothing correct is found.
     maxima.resize(optimalsectors);
 
-    //Track minimum distance found per sector
+    //Track minimum distance found per sector, so each sector keeps the secondary peak closest to the centre.
     const double max_domain_r = std::sqrt(2.0) * pixelshift;
+    std::vector<double> min_found_radius(optimalsectors, max_domain_r);
 
     //Loop over function to isolate boundary.
     for (int i = 0; i < ny; ++i) {
         for (int j = 0; j < ny; ++j) {
-            
+
             //Check boundaries only.
             if (i == 0 || i == ny - 1 || j == 0 || j == ny - 1) {
                 int index = (ny * i) + j;
@@ -371,28 +372,32 @@ void autocorrelation_peak_comp(
 
                 int sector_idx = static_cast<int>(std::floor(theta / dtheta)) % optimalsectors;
 
-                maxima[sector_idx].x = grad_r[index].x;
-                maxima[sector_idx].y = grad_r[index].y;
-                maxima[sector_idx].r = displacements[index].r;
-                maxima[sector_idx].theta = theta;
+                if (dist <= min_found_radius[sector_idx]) {
+                    min_found_radius[sector_idx] = dist;
+                    maxima[sector_idx].x = grad_r[index].x;
+                    maxima[sector_idx].y = grad_r[index].y;
+                    maxima[sector_idx].r = displacements[index].r;
+                    maxima[sector_idx].theta = theta;
+                }
             }
         }
     }
 
-    //Construct Minima Function
-    for(int i = 0; i < ny; i++){ 
-        for(int j = 0; j < ny; j++){ 
+    //Construct Maxima Function
+    for(int i = 0; i < ny; i++){
+        for(int j = 0; j < ny; j++){
 
-            int index = (ny * i) + j; 
+            int index = (ny * i) + j;
 
             double dist = std::sqrt((grad_r[index].x * grad_r[index].x) + (grad_r[index].y * grad_r[index].y));
-            
+
             //Avoid the centre. That would be bad.
             if (dist < 1e-3) continue;
 
-            //Sort for minima
-            bool minima_condition {(std::abs(grad_r[index].r) < 1e-3) && (grad_2r[index].r > 0.0)};
-            if (minima_condition == true){
+            //Sort for maxima. Every correlator here peaks at the centre (it is inverted where needed),
+            //so secondary peaks are maxima: zero radial gradient and negative curvature.
+            bool maxima_condition {(std::abs(grad_r[index].r) < 1e-3) && (grad_2r[index].r < 0.0)};
+            if (maxima_condition == true){
 
                 //Sort minima into bins.
                 double theta = std::atan2(grad_r[index].y, grad_r[index].x);
@@ -408,10 +413,13 @@ void autocorrelation_peak_comp(
                 for (int s = start_sector; s <= end_sector; ++s) {
                     int sector_idx = (s % optimalsectors + optimalsectors) % optimalsectors;
 
-                    maxima[sector_idx].x = grad_r[index].x;
-                    maxima[sector_idx].y = grad_r[index].y;
-                    maxima[sector_idx].r = displacements[index].r;
-                    maxima[sector_idx].theta = theta;
+                    if (dist < min_found_radius[sector_idx]) {
+                        min_found_radius[sector_idx] = dist;
+                        maxima[sector_idx].x = grad_r[index].x;
+                        maxima[sector_idx].y = grad_r[index].y;
+                        maxima[sector_idx].r = displacements[index].r;
+                        maxima[sector_idx].theta = theta;
+                    }
                 }
             }
         }
@@ -425,6 +433,11 @@ void autocorrelation_peak_comp(
     peak_max = 0.0;
     peak_comp = 0.0;
     double mean {0.0};
+
+    //Nothing survived the filtering, so there are no secondary peaks to compare.
+    if (maxima.empty()) {
+        return;
+    }
 
     //Compute maximum distance and the variance.
     for(auto point : maxima){
@@ -545,11 +558,17 @@ void sssig_deltamap_generator(
 )
 {
 
+    //Start from zero so the outputs never depend on what the caller passed in.
+    mean = 0.0;
+    stddev = 0.0;
+
     //Get noise addition mean.
     for(auto& point : sssig_heatmap){
         point.r = point.r - MIG;
         mean += point.r;
     }
+
+    mean /= sssig_heatmap.size();
 
     //Get noise addition variance.
     for(auto& point : sssig_heatmap){
