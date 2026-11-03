@@ -40,9 +40,12 @@ from post.plots import calc_relative_mse
 from post.plots.optimizer import build_triangulation
 
 # USER SETTINGS (hardcoded for this study)
-STUDY_DIR = Path(r"D:\Projects\Placement\Codes\specklemimic_study\loss_study")
+STUDY_DIR = Path(r"D:\Projects\Placement\Codes\specklemimic_study\full_study\loss_study")
+for position, argument in enumerate(sys.argv):
+    if argument == "--study-dir" and position + 1 < len(sys.argv):
+        STUDY_DIR = Path(sys.argv[position + 1])
 FIGURE_DIR = STUDY_DIR / "figures"
-MAKE_ANIMATIONS = True   # The slow part (about a minute per run).
+MAKE_ANIMATIONS = "--no-animations" not in sys.argv   # The slow part (about a minute per run).
 MAKE_RUN_FIGURES = True  # Per-run optimizer and reconstruction figures.
 
 CONFIGS = {
