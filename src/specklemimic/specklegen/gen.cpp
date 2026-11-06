@@ -1,5 +1,5 @@
 /**
- * @file main.cpp
+ * @file gen.cpp
  * @author Lavya Ghanwat (Pizzaman2629)
  * @brief Legacy Speckle Generator File.
  * 
@@ -9,7 +9,7 @@
  * The purpose of this file is mostly to act as a suite for diagnostics and verification of certain speckle patterns.
  * 
  * @version 0.2
- * @date 2026-10-02
+ * @date 2026-11-05
  * 
  * @copyright Copyright (c) 2026
  * 

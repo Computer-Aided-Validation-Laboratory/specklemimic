@@ -1,3 +1,15 @@
+/**
+ * @file pso.cpp
+ * @author Lavya D. Ghanwat (Pizzaman2629)
+ * @brief Particle swarm optimizer (implementation).
+ *
+ * @version 0.2
+ * @date 2026-11-05
+ *
+ * @copyright Copyright (c) 2026
+ *
+ */
+
 #include "pso.hpp"
 
 void gbinitializer(GBSwarmTopology& swarmState, std::mt19937_64& gen){

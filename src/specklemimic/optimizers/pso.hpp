@@ -1,3 +1,18 @@
+/**
+ * @file pso.hpp
+ * @author Lavya D. Ghanwat (Pizzaman2629)
+ * @brief Particle swarm optimizer (header).
+ *
+ * Declares the global-topology swarm structure, initializer, boundary handling, result structure and the standard PSO routine.
+ * Optimization runs in the unit hypercube [0,1]^d; the objective is rescaled to physical bounds by the caller.
+ *
+ * @version 0.2
+ * @date 2026-11-05
+ *
+ * @copyright Copyright (c) 2026
+ *
+ */
+
 #pragma once
 #include <algorithm>
 #include <cstddef>

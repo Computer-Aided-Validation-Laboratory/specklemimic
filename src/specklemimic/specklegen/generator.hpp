@@ -6,8 +6,8 @@
  * Currently allows for the generation of speckle seeds using halton sampling, initialization of structures and filling out a speckle pattern.
  * Speckle pattern filling is done very naively and needs improvements using bounding boxes.
  * 
- * @version 0.1
- * @date 2026-10-02
+ * @version 0.2
+ * @date 2026-11-05
  * 
  * @copyright Copyright (c) 2026
  * 

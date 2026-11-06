@@ -1,3 +1,15 @@
+/**
+ * @file helpers.cpp
+ * @author Lavya D. Ghanwat (Pizzaman2629)
+ * @brief Helper functions for the speckle generator (implementation).
+ *
+ * @version 0.2
+ * @date 2026-11-05
+ *
+ * @copyright Copyright (c) 2026
+ *
+ */
+
 #include <algorithm>
 #include <cmath>
 #include <numbers>

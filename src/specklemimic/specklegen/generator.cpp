@@ -1,3 +1,15 @@
+/**
+ * @file generator.cpp
+ * @author Lavya D. Ghanwat (Pizzaman2629)
+ * @brief Speckle pattern generation (implementation).
+ *
+ * @version 0.2
+ * @date 2026-11-05
+ *
+ * @copyright Copyright (c) 2026
+ *
+ */
+
 #include "generator.hpp"
 #include "structures.hpp"
 #include <vector>

@@ -1,13 +1,13 @@
 /**
  * @file diagnostics.hpp
  * @author Lavya D. Ghanwat (Pizzaman2629)
- * @brief Contains functions for a bunch of diagnostics. 
+ * @brief Speckle pattern quality diagnostics (MIG, histogram, autocorrelation metrics, SSSIG).
  * 
  * Currently allows the user to calculate the mean intensity gradient (MIG), speckle intensity histogram and autocorrelation landscapes.
  * The autocorrelation functions allowed so far are: SSD, SCC
  * 
- * @version 0.1
- * @date 2026-10-02
+ * @version 0.2
+ * @date 2026-11-05
  * 
  * @copyright Copyright (c) 2026
  * 

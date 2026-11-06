@@ -9,7 +9,7 @@
  * Every loss is a relative error (normalized by the ground truth), so losses with different units can be compared.
  *
  * @version 0.2
- * @date 2026-11-02
+ * @date 2026-11-05
  *
  * @copyright Copyright (c) 2026
  *
@@ -85,7 +85,7 @@ struct LossContext {
     double truth_norm {0.0};                //Sum of the squared ground truth gray values, summed in grid order.
     std::vector<Points> truth_sssig;        //Ground truth SSSIG heatmap (empty if not needed).
     std::vector<Points> truth_autocorr;     //Ground truth ZNSSD map (empty if not needed).
-    AutocorrScalars truth_scalars;          //Ground truth autocorrelation scalars.
+    AutocorrScalars truth_scalars;          //Ground truth autocorrelation scalars.(empty if not needed)
 };
 
 

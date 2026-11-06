@@ -1,3 +1,15 @@
+/**
+ * @file loss.cpp
+ * @author Lavya D. Ghanwat (Pizzaman2629)
+ * @brief Loss functions for speckle pattern reconstruction (implementation).
+ *
+ * @version 0.2
+ * @date 2026-11-05
+ *
+ * @copyright Copyright (c) 2026
+ *
+ */
+
 #include "loss.hpp"
 #include <cmath>
 #include "specklegen/generator.hpp"
@@ -9,7 +21,8 @@
 const double RELATIVE_FLOOR {1e-12};
 
 std::string loss_name(LossType type)
-{
+{   
+    //Switch logic for different losses for experimentation.
     switch(type){
         case LossType::GrayLevel:       return "graylevel";
         case LossType::SSSIGMSE:        return "sssig_mse";
@@ -23,6 +36,7 @@ std::string loss_name(LossType type)
 
 bool needs_autocorrelation(LossType type)
 {
+    //Hub for different aucororelation losses.
     return type == LossType::AutocorrMSE || type == LossType::AutocorrVar || type == LossType::AutocorrScalars;
 }
 
@@ -34,8 +48,8 @@ LossContext build_loss_context(
 {
 
     LossContext context;
-    context.settings = settings;
-    context.ground_truth = ground_truth;
+    context.settings = settings; //Set loss settings.
+    context.ground_truth = ground_truth; //Set ground truth data.
 
     //The sum of squares is accumulated in the same order graylevel_mse uses, so the normalisation is the same number.
     for(size_t k = 0; k < ground_truth.f.size(); k++){
@@ -43,6 +57,7 @@ LossContext build_loss_context(
     }
 
     //Enough Halton points for the most speckles the optimizer bounds can ask for.
+    //This type of machinery is important for parallelization, as we don't want to interface with the halton generator more than once.
     context.halton = generate_halton_table(speckle_numbers(settings.width, settings.height, settings.min_speckle_size, settings.max_ratio));
 
     if(need_sssig == true){
@@ -151,6 +166,8 @@ AutocorrScalars compute_autocorr_scalars(
     const LossSettings& settings)
 {
 
+    //This is the same workflow used in gen.cpp which is the hub for all diagnostics.
+
     AutocorrScalars scalars;
 
     int optimalsectors {optimal_sector_count(settings.pixelshift, settings.safety, settings.fallback)};
@@ -176,25 +193,21 @@ double graylevel_mse(
     const Field& candidate)
 {
 
-    //Loop and compute the relative gray level MSE.
-    int nx = candidate.grid.nx;
-    int ny = candidate.grid.ny;
+    //Loop and compute the relative gray level MSE. No directionality, so one flat loop.
+    const size_t n {static_cast<size_t>(candidate.grid.nx) * candidate.grid.ny};
 
     double loss {0.0};
     double norm {0.0};
 
-    for(int i = 0; i < nx; i++){
-        for(int j = 0; j < ny; j++){
-
-            int index = i * ny + j;
-            loss += (ground_truth.f[index] - candidate.f[index]) * (ground_truth.f[index] - candidate.f[index]);
-            norm += ground_truth.f[index] * ground_truth.f[index];
-
-        }
+    for(size_t k = 0; k < n; k++){
+        const double t {ground_truth.f[k]};
+        const double d {t - candidate.f[k]};
+        loss += d * d;
+        norm += t * t;
     }
 
     if(norm < RELATIVE_FLOOR){
-        return loss / (nx * ny);
+        return loss / n;
     }
 
     return loss / norm;
@@ -281,7 +294,7 @@ double relative_scalar_error(
 }
 
 //---------------------------------------------------------------------------
-//SEED LOSS. Optimizes the x, y coordinates of every seed.
+//SEED LOSS. Optimizes the x, y coordinates of every seed. (Basically legacy at this point)
 
 double graylevelmse_seeds(
     const double* x,
@@ -368,11 +381,13 @@ double params_loss(
 
     const LossSettings& settings {context.settings};
 
-    //One pattern per thread, allocated the first time and then only cleared and refilled. It needs 8 bytes per point.
+    //One pattern per thread, allocated the first time and then only cleared and refilled. This is just memory optimization for parallelizing. 
+    //Remember that the optimizer loop is parallelized, so every thread gets its own pattern.
     static thread_local Field pattern;
     pattern.grid = context.ground_truth.grid;
     generate_pattern_into(pattern, x[0], x[1], settings.width, settings.height, &context.halton);
 
+    //Switching logic for the different types of loss function.
     switch(type){
 
         case LossType::GrayLevel:

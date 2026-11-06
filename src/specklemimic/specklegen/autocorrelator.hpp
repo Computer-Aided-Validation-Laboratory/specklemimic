@@ -1,13 +1,13 @@
 /**
  * @file autocorrelator.hpp
  * @author Lavya D. Ghanwat (Pizzaman2629)
- * @brief Contains functions for a bunch of diagnostics. 
+ * @brief Speckle pattern autocorrelation functions.
  * 
  * Houses the functions used to generate autocorrelation landscapes. 
  * Compatible with SSD, SCC, ZSSD, NSSD, ZNSSD, ZNCC correlation functions.
  * 
- * @version 0.1
- * @date 2026-10-02
+ * @version 0.2
+ * @date 2026-11-05
  * 
  * @copyright Copyright (c) 2026
  * 

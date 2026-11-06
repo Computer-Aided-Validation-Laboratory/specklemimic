@@ -1,3 +1,15 @@
+/**
+ * @file main.cpp
+ * @author Lavya D. Ghanwat (Pizzaman2629)
+ * @brief Entry point for the loss function study.
+ *
+ * @version 0.2
+ * @date 2026-11-05
+ *
+ * @copyright Copyright (c) 2026
+ *
+ */
+
 #include <iostream>
 #include <chrono>
 #include <vector>

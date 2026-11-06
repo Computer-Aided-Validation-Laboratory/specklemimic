@@ -1,3 +1,15 @@
+/**
+ * @file psotest.cpp
+ * @author Lavya D. Ghanwat (Pizzaman2629)
+ * @brief Benchmark driver for the particle swarm optimizer.
+ *
+ * @version 0.2
+ * @date 2026-11-05
+ *
+ * @copyright Copyright (c) 2026
+ *
+ */
+
 #include <iostream>
 #include <iomanip>
 #include <vector>

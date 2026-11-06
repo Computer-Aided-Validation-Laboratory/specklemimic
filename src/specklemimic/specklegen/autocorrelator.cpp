@@ -1,3 +1,15 @@
+/**
+ * @file autocorrelator.cpp
+ * @author Lavya D. Ghanwat (Pizzaman2629)
+ * @brief Autocorrelation functions (implementation).
+ *
+ * @version 0.2
+ * @date 2026-11-05
+ *
+ * @copyright Copyright (c) 2026
+ *
+ */
+
 #include "structures.hpp"
 #include <chrono>
 #include <vector>

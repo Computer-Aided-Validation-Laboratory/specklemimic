@@ -5,8 +5,8 @@
  * 
  * Currently contains functions to save files, generate speckle seed counts, initialize autocorrelation displacements and compute gradients.
  * 
- * @version 0.1
- * @date 2026-10-02
+ * @version 0.2
+ * @date 2026-11-05
  * 
  * @copyright Copyright (c) 2026
  * 

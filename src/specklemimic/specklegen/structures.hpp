@@ -6,8 +6,8 @@
  * Currently stores the Points, GridInfo, Field and Histogram structures.
  * These structures are extensively used throughout the speckle generator code.
  * 
- * @version 0.1
- * @date 2026-10-02
+ * @version 0.2
+ * @date 2026-11-05
  * 
  * @copyright Copyright (c) 2026
  * 
