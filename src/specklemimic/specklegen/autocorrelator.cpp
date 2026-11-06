@@ -1,3 +1,15 @@
+/**
+ * @file autocorrelator.cpp
+ * @author Lavya D. Ghanwat (Pizzaman2629)
+ * @brief Autocorrelation functions (implementation).
+ *
+ * @version 0.2
+ * @date 2026-11-05
+ *
+ * @copyright Copyright (c) 2026
+ *
+ */
+
 #include "structures.hpp"
 #include <chrono>
 #include <vector>
@@ -6,9 +18,150 @@
 #include <algorithm>
 #include <numbers>
 
+//The displaced function is never built. A displacement (u, v), in grid points, moves point (i, j) to (i - u, j - v).
+//Whether that point is inside the grid is decided with index ranges: a row i is inside if 0 <= i - u < nx, and in such a row
+//the columns j with 0 <= j - v < ny are inside. Outside the grid the displaced function is 0.
+struct ShiftWindow {
+    int u {0};          //Displacement along i, in grid points.
+    int v {0};          //Displacement along j, in grid points.
+    int jlo {0};        //First column of an inside row that is inside the grid.
+    int jhi {0};        //One past the last column of an inside row that is inside the grid.
+};
+
+static inline ShiftWindow make_window(
+    const double u,
+    const double v,
+    const int nx,
+    const int ny)
+{
+
+    //Displacements are whole numbers of grid points (an integer pixel displacement divided by a subpixel of 1/k).
+    //Anything else is rounded (see warn_if_rounded).
+    ShiftWindow window;
+    window.u = static_cast<int>(std::llround(u));
+    window.v = static_cast<int>(std::llround(v));
+    window.jlo = std::clamp(std::max(0, window.v), 0, ny);
+    window.jhi = std::clamp(std::min(ny, window.v + ny), window.jlo, ny);
+
+    return window;
+
+}
+
+//Says once, before the displacements are processed, if a displacement has to be rounded to a whole number of grid points.
+static void warn_if_rounded(const std::vector<Points>& displacements, const double subpixel)
+{
+
+    for (const auto& displacement : displacements) {
+        const double u = displacement.x / subpixel;
+        const double v = displacement.y / subpixel;
+        if (u != std::round(u) || v != std::round(v)) {
+            std::cout << "WARNING: a displacement is not a whole number of grid points, it is rounded to the nearest grid point." << std::endl;
+            return;
+        }
+    }
+
+}
+
+static inline bool row_inside(const ShiftWindow& window, const int i, const int nx)
+{
+    return (i - window.u >= 0) && (i - window.u < nx);
+}
+
+//Mean of the function itself, the same for every displacement.
+static double function_mean(const Field& function)
+{
+
+    double mean {0};
+    for (const double value : function.f) {
+        mean += value;
+    }
+    mean /= function.f.size();
+
+    return mean;
+
+}
+
+//Norm of the function around its mean, the same for every displacement.
+static double function_delta(const Field& function, const double mean)
+{
+
+    double delta {0};
+    for (const double value : function.f) {
+        delta += (value - mean) * (value - mean);
+    }
+
+    return std::sqrt(delta);
+
+}
+
+//Mean of the displaced function. Outside the grid it is 0 and adds nothing, so only the inside is summed (in the same order).
+static double shifted_mean(const Field& function, const ShiftWindow& window)
+{
+
+    const int nx = function.grid.nx;
+    const int ny = function.grid.ny;
+
+    double mean {0};
+
+    for (int i = 0; i < nx; i++){
+
+        if (!row_inside(window, i, nx)) {
+            continue;
+        }
+
+        const size_t shifted_row = static_cast<size_t>(i - window.u) * ny;
+
+        for (int j = window.jlo; j < window.jhi; j++){
+            mean += function.f[shifted_row + static_cast<size_t>(j - window.v)];
+        }
+    }
+
+    mean /= function.f.size();
+
+    return mean;
+
+}
+
+//Norm of the displaced function around its mean. Every point counts, in grid order, including the ones outside the grid (value 0).
+static double shifted_delta(const Field& function, const ShiftWindow& window, const double mean)
+{
+
+    const int nx = function.grid.nx;
+    const int ny = function.grid.ny;
+
+    const double outside_deviation = (0.0 - mean);
+    double delta {0};
+
+    for (int i = 0; i < nx; i++){
+
+        if (!row_inside(window, i, nx)) {
+            for (int j = 0; j < ny; j++){
+                delta += outside_deviation * outside_deviation;
+            }
+            continue;
+        }
+
+        const size_t shifted_row = static_cast<size_t>(i - window.u) * ny;
+
+        for (int j = 0; j < window.jlo; j++){
+            delta += outside_deviation * outside_deviation;
+        }
+        for (int j = window.jlo; j < window.jhi; j++){
+            const double shifted = function.f[shifted_row + static_cast<size_t>(j - window.v)];
+            delta += (shifted - mean) * (shifted - mean);
+        }
+        for (int j = window.jhi; j < ny; j++){
+            delta += outside_deviation * outside_deviation;
+        }
+    }
+
+    return std::sqrt(delta);
+
+}
+
 void autocorrelator_ssd(
-    std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    std::vector<Points>& displacements,
+    const Field& function,
     const double subpixel)
 {
 
@@ -18,48 +171,52 @@ void autocorrelator_ssd(
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    //Define some helper variables. 
+    //Define some helper variables.
 
-    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE. 
-    int nx = function[0].nx;
-    int ny = function[0].ny;
+    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE.
+    const int nx = function.grid.nx;
+    const int ny = function.grid.ny;
 
-    //Loop over displacements. 
-    for (auto& displacement: displacements){
+    //Loop over displacements.
+    warn_if_rounded(displacements, subpixel);
 
-        //More helper variables for convenience.
-        double u = displacement.x/subpixel;
-        double v = displacement.y/subpixel;
+    //Displacements are independent, each one only reads the function and writes its own value, so they are shared out between threads.
+    #pragma omp parallel for
+    for (long long displacement_index = 0; displacement_index < static_cast<long long>(displacements.size()); displacement_index++){
+
+        auto& displacement = displacements[displacement_index];
+
+        const ShiftWindow window = make_window(displacement.x/subpixel, displacement.y/subpixel, nx, ny);
         displacement.r = 0.0;
 
-        //Initialize shifted function. 
-        std::vector<Function> shifted_function = function;
-
         for (int i = 0; i < nx; i++){
-            for (int j = 0; j < ny; j++){
 
-                int index = i * ny + j;
+            const size_t row = static_cast<size_t>(i) * ny;
 
-                //Mappin from the old function to the new function. 
-                int shifted_index = (i - u) * ny + (j - v);
-
-                if (i - u >= 0 && i - u < nx && j - v >= 0 && j - v < ny){
-                    //Shifting function properly
-                    shifted_function[index].f = function[shifted_index].f;
+            //Outside the grid the displaced function is 0, so the difference is the function itself.
+            if (!row_inside(window, i, nx)) {
+                for (int j = 0; j < ny; j++){
+                    displacement.r += function.f[row + j] * function.f[row + j];
                 }
-                else{
-                    //Adding a default 0 value.
-                    shifted_function[index].f = 0.0;
-                }
+                continue;
+            }
 
-                //Computing the SSD value.
-                displacement.r += ((function[index].f - shifted_function[index].f) * (function[index].f - shifted_function[index].f));
+            const size_t shifted_row = static_cast<size_t>(i - window.u) * ny;
 
+            for (int j = 0; j < window.jlo; j++){
+                displacement.r += function.f[row + j] * function.f[row + j];
+            }
+            for (int j = window.jlo; j < window.jhi; j++){
+                const double difference = function.f[row + j] - function.f[shifted_row + static_cast<size_t>(j - window.v)];
+                displacement.r += difference * difference;
+            }
+            for (int j = window.jhi; j < ny; j++){
+                displacement.r += function.f[row + j] * function.f[row + j];
             }
         }
 
         //Normalize the correlated value.
-        displacement.r /= function.size();
+        displacement.r /= function.f.size();
         displacement.r = (1 - displacement.r);
 
     }
@@ -72,8 +229,8 @@ void autocorrelator_ssd(
 }
 
 void autocorrelator_scc(
-    std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    std::vector<Points>& displacements,
+    const Field& function,
     const double subpixel)
 {
 
@@ -83,47 +240,40 @@ void autocorrelator_scc(
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    //Define some helper variables. 
-    int nx = function[0].nx;
-    int ny = function[0].ny;
+    //Define some helper variables.
+    const int nx = function.grid.nx;
+    const int ny = function.grid.ny;
 
-    //Compute square sum for normalization. 
+    //Compute square sum for normalization.
     double f_squared_sum = 0.0;
-    for (const auto& pt : function) {
-        f_squared_sum += pt.f * pt.f;
+    for (const double value : function.f) {
+        f_squared_sum += value * value;
     }
 
-    //Loop over displacements. 
-    for (auto& displacement: displacements){
+    //Loop over displacements.
+    warn_if_rounded(displacements, subpixel);
 
-        //More helper variables for convenience.
-        double u = displacement.x/subpixel;
-        double v = displacement.y/subpixel;
+    //Displacements are independent, each one only reads the function and writes its own value, so they are shared out between threads.
+    #pragma omp parallel for
+    for (long long displacement_index = 0; displacement_index < static_cast<long long>(displacements.size()); displacement_index++){
+
+        auto& displacement = displacements[displacement_index];
+
+        const ShiftWindow window = make_window(displacement.x/subpixel, displacement.y/subpixel, nx, ny);
         displacement.r = 0.0;
 
-        //Initialize shifted function. 
-        std::vector<Function> shifted_function = function;
-
+        //Outside the grid the displaced function is 0 and the product adds nothing, so only the inside is summed (in the same order).
         for (int i = 0; i < nx; i++){
-            for (int j = 0; j < ny; j++){
 
-                int index = i * ny + j;
+            if (!row_inside(window, i, nx)) {
+                continue;
+            }
 
-                //Mappin from the old function to the new function. 
-                int shifted_index = (i - u) * ny + (j - v);
+            const size_t row = static_cast<size_t>(i) * ny;
+            const size_t shifted_row = static_cast<size_t>(i - window.u) * ny;
 
-                if (i - u >= 0 && i - u < nx && j - v >= 0 && j - v < ny){
-                    //Shifting function properly
-                    shifted_function[index].f = function[shifted_index].f;
-                }
-                else{
-                    //Adding a default 0 value.
-                    shifted_function[index].f = 0.0;
-                }
-
-                //Computing the SSD value.
-                displacement.r += function[index].f * shifted_function[index].f;
-
+            for (int j = window.jlo; j < window.jhi; j++){
+                displacement.r += function.f[row + j] * function.f[shifted_row + static_cast<size_t>(j - window.v)];
             }
         }
 
@@ -140,8 +290,8 @@ void autocorrelator_scc(
 }
 
 void autocorrelator_nssd(
-    std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    std::vector<Points>& displacements,
+    const Field& function,
     const double subpixel)
 {
 
@@ -151,65 +301,77 @@ void autocorrelator_nssd(
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    //Define some helper variables. 
+    //Define some helper variables.
 
-    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE. 
-    int nx = function[0].nx;
-    int ny = function[0].ny;
+    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE.
+    const int nx = function.grid.nx;
+    const int ny = function.grid.ny;
 
-    //Loop over displacements again to get the actual correlation. 
-    for (auto& displacement: displacements){
+    //Norm of the function itself, the same for every displacement.
+    double f_norm {0};
+    for (const double value : function.f) {
+        f_norm += value * value;
+    }
+    f_norm = std::sqrt(f_norm);
 
-        //More helper variables for convenience.
-        double u = displacement.x/subpixel;
-        double v = displacement.y/subpixel;
+    //Loop over displacements again to get the actual correlation.
+    warn_if_rounded(displacements, subpixel);
+
+    //Displacements are independent, each one only reads the function and writes its own value, so they are shared out between threads.
+    #pragma omp parallel for
+    for (long long displacement_index = 0; displacement_index < static_cast<long long>(displacements.size()); displacement_index++){
+
+        auto& displacement = displacements[displacement_index];
+
+        const ShiftWindow window = make_window(displacement.x/subpixel, displacement.y/subpixel, nx, ny);
         displacement.r = 0.0;
 
-        //To compute the norms.
-        double f_m {0};
-        double g_m {0};
-
-        //Initialize shifted function. 
-        std::vector<Function> shifted_function = function;
-
-        //Compute some norms for NSSD and construct the shifted function. 
+        //Norm of the displaced function. Outside the grid it is 0 and adds nothing.
+        double g_norm {0};
         for (int i = 0; i < nx; i++){
-            for (int j = 0; j < ny; j++){
 
-                int index = i * ny + j;
+            if (!row_inside(window, i, nx)) {
+                continue;
+            }
 
-                //Mappin from the old function to the new function. 
-                int shifted_index = (i - u) * ny + (j - v);
+            const size_t shifted_row = static_cast<size_t>(i - window.u) * ny;
 
-                if (i - u >= 0 && i - u < nx && j - v >= 0 && j - v < ny){
-                    //Shifting function properly
-                    shifted_function[index].f = function[shifted_index].f;
-                }
-                else{
-                    //Adding a default 0 value.
-                    shifted_function[index].f = 0.0;
-                }
-
-                //Computing the SSD value.
-                f_m += function[index].f * function[index].f;
-                g_m += shifted_function[index].f * shifted_function[index].f;
-
+            for (int j = window.jlo; j < window.jhi; j++){
+                const double shifted = function.f[shifted_row + static_cast<size_t>(j - window.v)];
+                g_norm += shifted * shifted;
             }
         }
+        g_norm = std::sqrt(g_norm);
 
-        //Normalize the correlated value.
-        f_m = std::sqrt(f_m);
-        g_m = std::sqrt(g_m);
+        //Normalized value of the displaced function outside the grid.
+        const double outside_term = 0.0 / g_norm;
 
         for (int i = 0; i < nx; i++){
-            for (int j = 0; j < ny; j++){
 
-                int index = i * ny + j;
+            const size_t row = static_cast<size_t>(i) * ny;
 
-                //Computing the NSSD value.
-                displacement.r += (((function[index].f / f_m) - (shifted_function[index].f / g_m)) 
-                * ((function[index].f / f_m) - (shifted_function[index].f / g_m)));
+            if (!row_inside(window, i, nx)) {
+                for (int j = 0; j < ny; j++){
+                    const double difference = (function.f[row + j] / f_norm) - outside_term;
+                    displacement.r += difference * difference;
+                }
+                continue;
+            }
 
+            const size_t shifted_row = static_cast<size_t>(i - window.u) * ny;
+
+            for (int j = 0; j < window.jlo; j++){
+                const double difference = (function.f[row + j] / f_norm) - outside_term;
+                displacement.r += difference * difference;
+            }
+            for (int j = window.jlo; j < window.jhi; j++){
+                const double shifted = function.f[shifted_row + static_cast<size_t>(j - window.v)];
+                const double difference = (function.f[row + j] / f_norm) - (shifted / g_norm);
+                displacement.r += difference * difference;
+            }
+            for (int j = window.jhi; j < ny; j++){
+                const double difference = (function.f[row + j] / f_norm) - outside_term;
+                displacement.r += difference * difference;
             }
         }
 
@@ -226,8 +388,8 @@ void autocorrelator_nssd(
 }
 
 void autocorrelator_zssd(
-    std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    std::vector<Points>& displacements,
+    const Field& function,
     const double subpixel)
 {
 
@@ -237,70 +399,63 @@ void autocorrelator_zssd(
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    //Define some helper variables. 
+    //Define some helper variables.
 
-    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE. 
-    int nx = function[0].nx;
-    int ny = function[0].ny;
+    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE.
+    const int nx = function.grid.nx;
+    const int ny = function.grid.ny;
 
-    //Loop over displacements again to get the actual correlation. 
-    for (auto& displacement: displacements){
+    //Mean of the function itself, the same for every displacement.
+    const double f_m = function_mean(function);
 
-        //More helper variables for convenience.
-        double u = displacement.x/subpixel;
-        double v = displacement.y/subpixel;
+    //Loop over displacements again to get the actual correlation.
+    warn_if_rounded(displacements, subpixel);
+
+    //Displacements are independent, each one only reads the function and writes its own value, so they are shared out between threads.
+    #pragma omp parallel for
+    for (long long displacement_index = 0; displacement_index < static_cast<long long>(displacements.size()); displacement_index++){
+
+        auto& displacement = displacements[displacement_index];
+
+        const ShiftWindow window = make_window(displacement.x/subpixel, displacement.y/subpixel, nx, ny);
         displacement.r = 0.0;
 
-        //To compute the mean.
-        double f_m {0};
-        double g_m {0};
+        const double g_m = shifted_mean(function, window);
 
-        //Initialize shifted function. 
-        std::vector<Function> shifted_function = function;
+        //Deviation of the displaced function from its mean outside the grid.
+        const double outside_deviation = (0.0 - g_m);
 
-        //Compute some norms for NSSD and construct the shifted function. 
         for (int i = 0; i < nx; i++){
-            for (int j = 0; j < ny; j++){
 
-                int index = i * ny + j;
+            const size_t row = static_cast<size_t>(i) * ny;
 
-                //Mappin from the old function to the new function. 
-                int shifted_index = (i - u) * ny + (j - v);
-
-                if (i - u >= 0 && i - u < nx && j - v >= 0 && j - v < ny){
-                    //Shifting function properly
-                    shifted_function[index].f = function[shifted_index].f;
+            if (!row_inside(window, i, nx)) {
+                for (int j = 0; j < ny; j++){
+                    const double difference = (function.f[row + j] - f_m) - outside_deviation;
+                    displacement.r += difference * difference;
                 }
-                else{
-                    //Adding a default 0 value.
-                    shifted_function[index].f = 0.0;
-                }
+                continue;
+            }
 
-                //Computing the SSD value.
-                f_m += function[index].f;
-                g_m += shifted_function[index].f;
+            const size_t shifted_row = static_cast<size_t>(i - window.u) * ny;
 
+            for (int j = 0; j < window.jlo; j++){
+                const double difference = (function.f[row + j] - f_m) - outside_deviation;
+                displacement.r += difference * difference;
+            }
+            for (int j = window.jlo; j < window.jhi; j++){
+                const double shifted = function.f[shifted_row + static_cast<size_t>(j - window.v)];
+                const double difference = (function.f[row + j] - f_m) - (shifted - g_m);
+                displacement.r += difference * difference;
+            }
+            for (int j = window.jhi; j < ny; j++){
+                const double difference = (function.f[row + j] - f_m) - outside_deviation;
+                displacement.r += difference * difference;
             }
         }
 
-        //Normalize the correlated value.
-        f_m /= function.size();
-        g_m /= function.size();
-
-        for (int i = 0; i < nx; i++){
-            for (int j = 0; j < ny; j++){
-
-                int index = i * ny + j;
-
-                //Computing the ZSSD value.
-                displacement.r += ((function[index].f - f_m) - (shifted_function[index].f - g_m))
-                 * ((function[index].f - f_m) - (shifted_function[index].f - g_m));
-
-            }
-        }
-
-        //Invert and normalize the correlation function. 
-        displacement.r /= function.size();
+        //Invert and normalize the correlation function.
+        displacement.r /= function.f.size();
         displacement.r = (1 - (displacement.r));
 
     }
@@ -313,8 +468,8 @@ void autocorrelator_zssd(
 }
 
 void autocorrelator_znssd(
-    std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    std::vector<Points>& displacements,
+    const Field& function,
     const double subpixel)
 {
 
@@ -324,86 +479,61 @@ void autocorrelator_znssd(
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    //Define some helper variables. 
+    //Define some helper variables.
 
-    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE. 
-    int nx = function[0].nx;
-    int ny = function[0].ny;
+    //NOTE TO SELF: COULD ADD SOME FALLBACKS HERE.
+    const int nx = function.grid.nx;
+    const int ny = function.grid.ny;
 
-    //Loop over displacements again to get the actual correlation. 
-    for (auto& displacement: displacements){
+    //Mean and norm of the function itself, the same for every displacement.
+    const double f_m = function_mean(function);
+    const double delta_f = function_delta(function, f_m);
 
-        //More helper variables for convenience.
-        double u = displacement.x/subpixel;
-        double v = displacement.y/subpixel;
+    //Loop over displacements again to get the actual correlation.
+    warn_if_rounded(displacements, subpixel);
+
+    //Displacements are independent, each one only reads the function and writes its own value, so they are shared out between threads.
+    #pragma omp parallel for
+    for (long long displacement_index = 0; displacement_index < static_cast<long long>(displacements.size()); displacement_index++){
+
+        auto& displacement = displacements[displacement_index];
+
+        const ShiftWindow window = make_window(displacement.x/subpixel, displacement.y/subpixel, nx, ny);
         displacement.r = 0.0;
 
-        //To compute the mean.
-        double f_m {0};
-        double g_m {0};
+        //Mean and norm of the displaced function.
+        const double g_m = shifted_mean(function, window);
+        const double delta_g = shifted_delta(function, window, g_m);
 
-        //To compute the zero mean normalization. 
-        double delta_f {0};
-        double delta_g {0};
+        //Normalized deviation of the displaced function outside the grid.
+        const double outside_term = (0.0 - g_m) / delta_g;
 
-        //Initialize shifted function. 
-        std::vector<Function> shifted_function = function;
-
-        //Compute some norms for NSSD and construct the shifted function. 
         for (int i = 0; i < nx; i++){
-            for (int j = 0; j < ny; j++){
 
-                int index = i * ny + j;
+            const size_t row = static_cast<size_t>(i) * ny;
 
-                //Mappin from the old function to the new function. 
-                int shifted_index = (i - u) * ny + (j - v);
-
-                if (i - u >= 0 && i - u < nx && j - v >= 0 && j - v < ny){
-                    //Shifting function properly
-                    shifted_function[index].f = function[shifted_index].f;
+            if (!row_inside(window, i, nx)) {
+                for (int j = 0; j < ny; j++){
+                    const double difference = ((function.f[row + j] - f_m) / delta_f) - outside_term;
+                    displacement.r += difference * difference;
                 }
-                else{
-                    //Adding a default 0 value.
-                    shifted_function[index].f = 0.0;
-                }
-
-                //Computing the SSD value.
-                f_m += function[index].f;
-                g_m += shifted_function[index].f;
-
+                continue;
             }
-        }
 
-        //Normalize the correlated value.
-        f_m /= function.size();
-        g_m /= function.size();
+            const size_t shifted_row = static_cast<size_t>(i - window.u) * ny;
 
-        for (int i = 0; i < nx; i++){
-            for (int j = 0; j < ny; j++){
-
-                int index = i * ny + j;
-
-                //Computing the deltas
-                delta_f += (function[index].f - f_m) * (function[index].f - f_m);
-                delta_g += (shifted_function[index].f - g_m) * (shifted_function[index].f - g_m);
-
+            for (int j = 0; j < window.jlo; j++){
+                const double difference = ((function.f[row + j] - f_m) / delta_f) - outside_term;
+                displacement.r += difference * difference;
             }
-        }
-
-        //Normalize the deltas. 
-        delta_f = std::sqrt(delta_f);
-        delta_g = std::sqrt(delta_g);
-
-
-        for (int i = 0; i < nx; i++){
-            for (int j = 0; j < ny; j++){
-
-                int index = i * ny + j;
-
-                //Computing the ZNSSD value.
-                displacement.r += (((function[index].f - f_m) / delta_f) - ((shifted_function[index].f - g_m) / delta_g)) * 
-                (((function[index].f - f_m) / delta_f) - ((shifted_function[index].f - g_m) / delta_g));
-
+            for (int j = window.jlo; j < window.jhi; j++){
+                const double shifted = function.f[shifted_row + static_cast<size_t>(j - window.v)];
+                const double difference = ((function.f[row + j] - f_m) / delta_f) - ((shifted - g_m) / delta_g);
+                displacement.r += difference * difference;
+            }
+            for (int j = window.jhi; j < ny; j++){
+                const double difference = ((function.f[row + j] - f_m) / delta_f) - outside_term;
+                displacement.r += difference * difference;
             }
         }
 
@@ -420,8 +550,8 @@ void autocorrelator_znssd(
 }
 
 void autocorrelator_zncc(
-    std::vector<Points>& displacements, 
-    const std::vector<Function>& function, 
+    std::vector<Points>& displacements,
+    const Field& function,
     const double subpixel)
 {
 
@@ -431,89 +561,56 @@ void autocorrelator_zncc(
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    //Define some helper variables. 
-    int nx = function[0].nx;
-    int ny = function[0].ny;
+    //Define some helper variables.
+    const int nx = function.grid.nx;
+    const int ny = function.grid.ny;
 
-    //Compute square sum for normalization. 
-    double f_squared_sum = 0.0;
-    for (const auto& pt : function) {
-        f_squared_sum += pt.f * pt.f;
-    }
+    //Mean and norm of the function itself, the same for every displacement.
+    const double f_m = function_mean(function);
+    const double delta_f = function_delta(function, f_m);
 
-    //Loop over displacements again to get the actual correlation. 
-    for (auto& displacement: displacements){
+    //Loop over displacements again to get the actual correlation.
+    warn_if_rounded(displacements, subpixel);
 
-        //More helper variables for convenience.
-        double u = displacement.x/subpixel;
-        double v = displacement.y/subpixel;
+    //Displacements are independent, each one only reads the function and writes its own value, so they are shared out between threads.
+    #pragma omp parallel for
+    for (long long displacement_index = 0; displacement_index < static_cast<long long>(displacements.size()); displacement_index++){
+
+        auto& displacement = displacements[displacement_index];
+
+        const ShiftWindow window = make_window(displacement.x/subpixel, displacement.y/subpixel, nx, ny);
         displacement.r = 0.0;
 
-        //To compute the mean.
-        double f_m {0};
-        double g_m {0};
+        //Mean and norm of the displaced function.
+        const double g_m = shifted_mean(function, window);
+        const double delta_g = shifted_delta(function, window, g_m);
 
-        //To compute the zero mean normalization. 
-        double delta_f {0};
-        double delta_g {0};
+        //Deviation of the displaced function from its mean outside the grid, and the normalization of the product.
+        const double outside_deviation = (0.0 - g_m);
+        const double normalization = delta_f * delta_g;
 
-        //Initialize shifted function. 
-        std::vector<Function> shifted_function = function;
-
-        //Compute some norms for NSSD and construct the shifted function. 
         for (int i = 0; i < nx; i++){
-            for (int j = 0; j < ny; j++){
 
-                int index = i * ny + j;
+            const size_t row = static_cast<size_t>(i) * ny;
 
-                //Mappin from the old function to the new function. 
-                int shifted_index = (i - u) * ny + (j - v);
-
-                if (i - u >= 0 && i - u < nx && j - v >= 0 && j - v < ny){
-                    //Shifting function properly
-                    shifted_function[index].f = function[shifted_index].f;
+            if (!row_inside(window, i, nx)) {
+                for (int j = 0; j < ny; j++){
+                    displacement.r += ((function.f[row + j] - f_m) * outside_deviation) / normalization;
                 }
-                else{
-                    //Adding a default 0 value.
-                    shifted_function[index].f = 0.0;
-                }
-
-                //Computing the SSD value.
-                f_m += function[index].f;
-                g_m += shifted_function[index].f;
-
+                continue;
             }
-        }
 
-        //Normalize the correlated value.
-        f_m /= function.size();
-        g_m /= function.size();
+            const size_t shifted_row = static_cast<size_t>(i - window.u) * ny;
 
-        for (int i = 0; i < nx; i++){
-            for (int j = 0; j < ny; j++){
-
-                int index = i * ny + j;
-
-                //Computing the deltas
-                delta_f += (function[index].f - f_m) * (function[index].f - f_m);
-                delta_g += (shifted_function[index].f - g_m) * (shifted_function[index].f - g_m);
-
+            for (int j = 0; j < window.jlo; j++){
+                displacement.r += ((function.f[row + j] - f_m) * outside_deviation) / normalization;
             }
-        }
-
-        //Normalize the deltas. 
-        delta_f = std::sqrt(delta_f);
-        delta_g = std::sqrt(delta_g);
-
-
-        for (int i = 0; i < nx; i++){
-            for (int j = 0; j < ny; j++){
-
-                int index = i * ny + j;
-
-                //Computing the ZNCC value.
-                displacement.r += ((function[index].f - f_m) * (shifted_function[index].f - g_m)) / (delta_f * delta_g);
-
+            for (int j = window.jlo; j < window.jhi; j++){
+                const double shifted = function.f[shifted_row + static_cast<size_t>(j - window.v)];
+                displacement.r += ((function.f[row + j] - f_m) * (shifted - g_m)) / normalization;
+            }
+            for (int j = window.jhi; j < ny; j++){
+                displacement.r += ((function.f[row + j] - f_m) * outside_deviation) / normalization;
             }
         }
 

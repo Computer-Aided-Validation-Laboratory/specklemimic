@@ -3,17 +3,19 @@
  * @author Lavya D. Ghanwat (Pizzaman2629)
  * @brief File to store structures.
  * 
- * Currently stores the Points, Function and Histogram structures. 
+ * Currently stores the Points, GridInfo, Field and Histogram structures.
  * These structures are extensively used throughout the speckle generator code.
  * 
- * @version 0.1
- * @date 2026-10-02
+ * @version 0.2
+ * @date 2026-11-05
  * 
  * @copyright Copyright (c) 2026
  * 
  */
 
 #pragma once
+
+#include <vector>
 
 /**
  * @brief Structure called Points
@@ -30,18 +32,36 @@ struct Points{
 };
 
 /**
- * @brief Structure called Function
- * 
- * Houses a discrete representation of a function. Contains details about its grid values and the grid.
- * It is used extensively through the speckle generator.
- * 
+ * @brief Structure called GridInfo
+ *
+ * Describes a uniform grid, once, instead of storing the grid in every point.
+ * Points are stored in the order index = i * ny + j, and the position of a point is computed from its indices:
+ * x = x0 + i * dx and y = y0 + j * dy.
+ *
  */
-struct Function{
-    double x;
-    double y;
-    double f;
-    int nx;
-    int ny;
+struct GridInfo{
+    int nx {0};
+    int ny {0};
+    double x0 {0.0};
+    double y0 {0.0};
+    double dx {1.0};
+    double dy {1.0};
+
+    double x(const int i) const {return x0 + i * dx;}
+    double y(const int j) const {return y0 + j * dy;}
+};
+
+/**
+ * @brief Structure called Field
+ *
+ * Houses a discrete representation of a function on a uniform grid: the grid description and the function values f only.
+ * It is used extensively through the speckle generator.
+ * Needs 8 bytes per point, the grid itself is never stored point by point.
+ *
+ */
+struct Field{
+    GridInfo grid;
+    std::vector<double> f;
 };
 
 /**

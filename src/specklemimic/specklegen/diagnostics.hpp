@@ -1,13 +1,13 @@
 /**
  * @file diagnostics.hpp
  * @author Lavya D. Ghanwat (Pizzaman2629)
- * @brief Contains functions for a bunch of diagnostics. 
+ * @brief Speckle pattern quality diagnostics (MIG, histogram, autocorrelation metrics, SSSIG).
  * 
  * Currently allows the user to calculate the mean intensity gradient (MIG), speckle intensity histogram and autocorrelation landscapes.
  * The autocorrelation functions allowed so far are: SSD, SCC
  * 
- * @version 0.1
- * @date 2026-10-02
+ * @version 0.2
+ * @date 2026-11-05
  * 
  * @copyright Copyright (c) 2026
  * 
@@ -22,7 +22,7 @@
  * @param grad_mag Gradient magnitude function. 
  * @return double Mean intensity gradient. (Single value)
  */
-double mig(const std::vector<Function>& grad_mag);
+double mig(const Field& grad_mag);
 
 
 /**
@@ -31,7 +31,7 @@ double mig(const std::vector<Function>& grad_mag);
  * Computes mean, variance, shannon entropy and outputs that.
  * 
  * @param nbins Number of bins needed for the speckle histogram.
- * @param function Function for the speckle pattern.
+ * @param function Field for the speckle pattern.
  * @param histogram Pre-initialized histogram vector.
  * @param probability_density Pre-initialized vector to store the probability density, (Variable name is shortened here)
  * @param mean Mean speckle intensity value.
@@ -40,7 +40,7 @@ double mig(const std::vector<Function>& grad_mag);
  */
 void histogram_generator(
     const int nbins, 
-    const std::vector<Function>& function, 
+    const Field& function, 
     std::vector<Histogram>& histogram, 
     std::vector<Histogram>& probability_density, 
     double& mean, 
@@ -143,7 +143,7 @@ void autocorrelation_peak_comp(
 std::vector<Points> sssig_heatmap_generator(
     const int ss_size, 
     const int ss_step, 
-    const std::vector<Function>& grad_mag, 
+    const Field& grad_mag, 
     const double subpixel,
     const int width,
     const int height

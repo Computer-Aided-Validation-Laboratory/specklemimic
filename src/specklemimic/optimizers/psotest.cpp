@@ -1,3 +1,15 @@
+/**
+ * @file psotest.cpp
+ * @author Lavya D. Ghanwat (Pizzaman2629)
+ * @brief Benchmark driver for the particle swarm optimizer.
+ *
+ * @version 0.2
+ * @date 2026-11-05
+ *
+ * @copyright Copyright (c) 2026
+ *
+ */
+
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -6,17 +18,18 @@
 #include <limits>
 #include <chrono>
 #include <numbers>
-#include "optimizers/pso.hpp"
+#include "pso.hpp"
 
 //---------------------------------------------------------------------------
 //USER DEFINED PARAMETERS.
-const int ITERATIONS {2000};       //Iterations per optimizer run.
-const int NRUNS {20};              //Number of repeated runs (different seeds) per test.
-const double TOL {1e-4};           //A run counts as a success if (best value - known minimum) < TOL.
-const bool DEFAULTS {false};       //true = use the library default coefficients.
-const double INERTIA {0.729};      //Clerc-Kennedy constriction values.
-const double ACCELERATION1 {1.49445};
-const double ACCELERATION2 {1.49445};
+const int iterations {2000};       //Iterations per optimizer run.
+const int nruns {20};              //Number of repeated runs (different seeds) per test.
+const double tol {1e-4};           //A run counts as a success if (best value - known minimum) < tol.
+const bool default_bounds {false};  //true = ignore lo/hi and optimize in the unit hypercube [0,1]^d.
+const bool save_loss_history {true};  //Save the global best value of every iteration to csv (first run of each test only).
+const double inertia {0.729};      //Clerc-Kennedy constriction values.
+const double acceleration1 {1.49445};
+const double acceleration2 {1.49445};
 //---------------------------------------------------------------------------
 //OBJECTIVE FUNCTIONS.
 //Every objective function MUST have exactly this signature:
@@ -133,7 +146,7 @@ double schwefel(const double* x, size_t d){
 
 //---------------------------------------------------------------------------
 //TEST RUNNER.
-//Runs the optimizer NRUNS times on one function and prints a summary line.
+//Runs the optimizer nruns times on one function and prints a summary line.
 //lo, hi : domain bounds applied to every dimension.
 //xopt   : known location of the minimum in every dimension.
 //fopt   : known minimum value.
@@ -150,16 +163,26 @@ void run_test(const std::string& name, double (*f)(const double*, size_t), size_
     double best_err {std::numeric_limits<double>::infinity()};
     double worst_err {0.0};
 
-    for(int run = 0; run < NRUNS; run++){
+    for(int run = 0; run < nruns; run++){
         // Enable history tracking for the first run when d = 2, using a distinct filename tag per landscape
         std::string tag = "";
         if (d == 2 && run == 0) {
             tag = name + "_run"; // e.g. "Sphere_run", "Rosenbrock_run", etc.
         }
 
-        PSOResult result {spsoptimzer(f, ITERATIONS, n, d, lo_vec, hi_vec, DEFAULTS, INERTIA, ACCELERATION1, ACCELERATION2, 1000 + run, false, tag)};
+        //The first run of every test also saves its loss history (if switched on).
+        //d = 2 keeps the tag from above, other dimensions get their own tag so the loss files do not overwrite each other.
+        bool save_loss = false;
+        if (save_loss_history && run == 0) {
+            if (d != 2) {
+                tag = name + "_run_d" + std::to_string(d); // e.g. "Sphere_run_d10"
+            }
+            save_loss = true;
+        }
+
+        PSOResult result {spsoptimzer(f, iterations, n, d, lo_vec, hi_vec, default_bounds, inertia, acceleration1, acceleration2, 1000 + run, false, tag, save_loss)};
         double err {result.best_val - fopt};
-        if(err < TOL){
+        if(err < tol){
             successes++;
         }
         sum_err += err;
@@ -171,19 +194,19 @@ void run_test(const std::string& name, double (*f)(const double*, size_t), size_
         }
     }
 
-    std::cout << std::left << std::setw(22) << name << std::right << " | d = " << std::setw(2) << d << " | n = " << std::setw(3) << n << " | f(x*) check = " << std::scientific << std::setprecision(1) << check << " | success = " << std::setw(2) << successes << "/" << NRUNS << " | mean err = " << std::setprecision(2) << sum_err / NRUNS << " | best err = " << best_err << " | worst err = " << worst_err << " |" << std::endl;
+    std::cout << std::left << std::setw(22) << name << std::right << " | d = " << std::setw(2) << d << " | n = " << std::setw(3) << n << " | f(x*) check = " << std::scientific << std::setprecision(1) << check << " | success = " << std::setw(2) << successes << "/" << nruns << " | mean err = " << std::setprecision(2) << sum_err / nruns << " | best err = " << best_err << " | worst err = " << worst_err << " |" << std::endl;
 }
 
 //---------------------------------------------------------------------------
 //MAIN FUNCTION.
-int main(){
+int testrun(){
     int dims[3] {2, 10, 30};
 
     std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
     std::cout << "PSO BENCHMARK TESTS" << std::endl;
     std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
-    std::cout << "Iterations = " << ITERATIONS << " | Runs per test = " << NRUNS << " | Success tolerance = " << TOL << std::endl;
-    std::cout << "Inertia = " << INERTIA << " | Acceleration 1 = " << ACCELERATION1 << " | Acceleration 2 = " << ACCELERATION2 << std::endl;
+    std::cout << "Iterations = " << iterations << " | Runs per test = " << nruns << " | Success tolerance = " << tol << std::endl;
+    std::cout << "Inertia = " << inertia << " | Acceleration 1 = " << acceleration1 << " | Acceleration 2 = " << acceleration2 << std::endl;
     std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
 
     //Start timer.
@@ -212,4 +235,6 @@ int main(){
 
     std::cout << "PROGRAM FINISHED." << std::endl;
     std::cout << "Total time: " << std::fixed << std::setprecision(2) << duration_ms.count() / 1000 << "s" << std::endl;
+
+    return 0;
 }
