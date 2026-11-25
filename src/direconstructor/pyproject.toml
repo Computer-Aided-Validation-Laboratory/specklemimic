@@ -1,0 +1,17 @@
+[project]
+name = "datasetgen"
+version = "0.1.0"
+description = "Speckle dataset generation via rileyrunner.py"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "riley-raster",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = []
+packages = []
