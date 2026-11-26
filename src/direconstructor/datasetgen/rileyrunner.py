@@ -72,7 +72,8 @@ class RileyRunner:
             focal_length = self.args.focal_length
             self.base_camera = riley.Camera(
                     pixels_num=(self.args.width, self.args.height),
-                    pixels_size=(focal_length / self.args.width, focal_length / self.args.height),
+                    #Square pixels: the sensor is focal_length wide, its height follows the aspect ratio.
+                    pixels_size=(focal_length / self.args.width, focal_length / self.args.width),
                     pos_world=(0.0, 0.0, self.args.side * self.args.fov_scale),
                     rot_world=self.args.world_rot,
                     roi_cent_world=self.args.roi_cent_world,
@@ -212,11 +213,11 @@ if __name__ == "__main__":
 
     #Example of what the run plan generator loop looks like.
     args = SimpleNamespace(
-        pattern="disk",
+        pattern="disk", #Vary this for ground truths.
         realization=1,
-        coverage=0.5,
-        scale=0.25,
-        side=40.0,
+        coverage=0.1, #Vary this for ground truths.
+        scale=0.25, #Vary this for ground truths.
+        side=40.0, 
         width=512,
         height=512,
         focal_length=50e-3,
@@ -225,12 +226,12 @@ if __name__ == "__main__":
         roi_cent_world=(0.0, 0.0, 0.0),
         sub_sample=4,
         effects_seed=42,
-        k1=(-0.2, 0.2),
-        k2=(-0.03, 0.03),
-        k3=(0.0, 0.0),
+        k1=(-0.2, 0.2), #Vary this for mutants.
+        k2=(-0.03, 0.03), #Vary this for mutants.
+        k3=(0.0, 0.0), #Vary this for mutants.
         p1=(-0.001, 0.001),
         p2=(-0.001, 0.001),
-        blur_sigma=(0.4, 1.2),
+        blur_sigma=(0.4, 1.2), #Vary this for mutants.
     )
     directory = Path("out/test")
 

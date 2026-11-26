@@ -1,0 +1,3 @@
+truth_id,directory,name,pattern,realization,coverage,scale,side,width,height,focal_length,fov_scale,world_rot_x,world_rot_y,world_rot_z,roi_cent_world_x,roi_cent_world_y,roi_cent_world_z,sub_sample,effects_seed,k1_min,k1_max,k2_min,k2_max,k3_min,k3_max,p1_min,p1_max,p2_min,p2_max,blur_sigma_min,blur_sigma_max
+000000,train/disk/000000,000000,disk,1,0.3,0.25,40.0,512,512,0.05,1.2,0.0,0.0,0.0,0.0,0.0,0.0,4,42,-0.2,0.2,-0.03,0.03,0.0,0.0,-0.001,0.001,-0.001,0.001,0.4,1.2
+000001,train/perlin/000001,000001,perlin,2,0.3,0.25,40.0,512,512,0.05,1.2,0.0,0.0,0.0,0.0,0.0,0.0,4,42,-0.2,0.2,-0.03,0.03,0.0,0.0,-0.001,0.001,-0.001,0.001,0.4,1.2

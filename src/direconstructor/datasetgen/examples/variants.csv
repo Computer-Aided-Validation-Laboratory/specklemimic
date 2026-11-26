@@ -1,0 +1,7 @@
+truth_id,suffix,pattern,realization,coverage,scale,side,width,height,focal_length,fov_scale,world_rot_x,world_rot_y,world_rot_z,roi_cent_world_x,roi_cent_world_y,roi_cent_world_z,sub_sample,effects_seed,k1_min,k1_max,k2_min,k2_max,k3_min,k3_max,p1_min,p1_max,p2_min,p2_max,blur_sigma_min,blur_sigma_max
+000000,v000,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+000000,v001,,,,,,,,,,,,,,,,,,-0.5,0.5,,,,,,,,,,
+000000,v002,,,,,,,,,,,,,,,,,,0.1,0.1,0.0,0.0,,,0.0,0.0,0.0,0.0,0.8,0.8
+000000,v003,,,,,,,,,,0.0,0.0,0.1,,,,,,,,,,,,,,,,,
+000001,v000,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+000001,v001,,,,,,,,,,,,,,,,,7,,,,,,,,,,,0.0,0.0
